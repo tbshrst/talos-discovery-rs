@@ -1,5 +1,6 @@
-use std::net::IpAddr;
+use std::{collections::HashMap, net::IpAddr, sync::Arc};
 
+use tokio::sync::Mutex;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 use tracing::{debug, error, info};
@@ -23,7 +24,7 @@ async fn main() {
         .with(fmt::layer().with_target(false))
         .init();
 
-    let discovery_service = ClusterServer::new(DiscoveryService {});
+    let discovery_service = ClusterServer::new(DiscoveryService::new().await);
     let addr = "0.0.0.0:3000".parse().unwrap();
     tracing::info!("Starting Talos Discovery Service gRPC server: {}", addr);
 
@@ -34,7 +35,26 @@ async fn main() {
         .unwrap();
 }
 
-pub struct DiscoveryService;
+type ClusterId = String;
+
+pub struct DiscoveryService {
+    clusters: Arc<Mutex<HashMap<ClusterId, TalosCluster>>>,
+}
+
+struct TalosCluster {
+    _id: ClusterId,
+    _affiliates: Vec<Affilliates>,
+}
+
+struct Affilliates {}
+
+impl DiscoveryService {
+    async fn new() -> Self {
+        Self {
+            clusters: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
 
 #[tonic::async_trait]
 impl Cluster for DiscoveryService {
@@ -72,6 +92,7 @@ impl Cluster for DiscoveryService {
             request.remote_addr().unwrap().ip()
         );
         debug!("{:?}", request);
+        let mut _clusters = self.clusters.lock().await;
         unimplemented!();
     }
 
@@ -84,6 +105,7 @@ impl Cluster for DiscoveryService {
             request.remote_addr().unwrap().ip()
         );
         debug!("{:?}", request);
+        let mut _clusters = self.clusters.lock().await;
         unimplemented!();
     }
 
@@ -96,6 +118,7 @@ impl Cluster for DiscoveryService {
             request.remote_addr().unwrap().ip()
         );
         debug!("{:?}", request);
+        let mut _clusters = self.clusters.lock().await;
         unimplemented!();
     }
 
@@ -107,6 +130,7 @@ impl Cluster for DiscoveryService {
             "cluster node request: Watch ({})",
             request.remote_addr().unwrap().ip()
         );
+        let mut _clusters = self.clusters.lock().await;
         debug!("{:?}", request);
         unimplemented!();
     }
