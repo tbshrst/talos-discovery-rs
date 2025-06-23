@@ -18,6 +18,10 @@
         name:
           - xfce4-screensaver
 
+    - name: Add Xauthority
+      shell: |
+        echo "export XAUTHORITY=/home/{{ user }}/.Xauthority" >> /home/{{ user }}/.bashrc
+
     - name: Install Chrome
       shell: |
         wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -55,6 +59,7 @@
           unset SESSION_MANAGER
           unset DBUS_SESSION_BUS_ADDRESS
 
+          xhost +si:localuser:{{ user }} &
           /usr/bin/startxfce4
           [ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
           [ -r /home/{{ user }}/.Xresources ] && xrdb /home/{{ user }}/.Xresources

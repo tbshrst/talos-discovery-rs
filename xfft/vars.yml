@@ -24,8 +24,8 @@ user: dev
 password: geekweek
 container_engine: podman # podman|docker
 upload_repository: true
-with_vnc: false
-num_vnc_sessions: 3
+with_vnc: true
+num_vnc_sessions: 1
 with_microk8s: true
 with_k3srancher: false
 with_docker_prune: false
