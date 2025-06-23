@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "proto/v1alpha1/client/affiliate.proto",
                 "proto/v1alpha1/server/cluster.proto",
             ],
-            &["proto/v1alpha1/client", "proto/v1alpha1/server", "proto"],
+            &["proto"],
         )?;
     Ok(())
 }

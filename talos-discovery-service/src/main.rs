@@ -1,19 +1,31 @@
-use tonic::Status;
+use std::net::IpAddr;
 
-use crate::discovery::cluster_server::Cluster;
 use tokio_stream::wrappers::ReceiverStream;
+use tonic::{Request, Response, Status};
+use tracing::{debug, error, info};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+
+use crate::discovery::{
+    cluster_server::{Cluster, ClusterServer},
+    AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest,
+    AffiliateUpdateResponse, HelloRequest, HelloResponse, ListRequest, ListResponse, WatchRequest,
+    WatchResponse,
+};
+
 pub mod discovery {
     tonic::include_proto!("sidero.discovery.server");
 }
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::registry()
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with(fmt::layer().with_target(false))
+        .init();
 
-    let discovery_service = discovery::cluster_server::ClusterServer::new(ClusterService {});
+    let discovery_service = ClusterServer::new(DiscoveryService {});
     let addr = "0.0.0.0:3000".parse().unwrap();
-
-    tracing::info!("Starting Talos Discovery Service gRPC sever: {}", addr);
+    tracing::info!("Starting Talos Discovery Service gRPC server: {}", addr);
 
     tonic::transport::Server::builder()
         .add_service(discovery_service)
@@ -22,56 +34,80 @@ async fn main() {
         .unwrap();
 }
 
-pub struct ClusterService;
+pub struct DiscoveryService;
 
 #[tonic::async_trait]
-impl Cluster for ClusterService {
-    type WatchStream = ReceiverStream<Result<discovery::WatchResponse, Status>>;
+impl Cluster for DiscoveryService {
+    type WatchStream = ReceiverStream<Result<WatchResponse, Status>>;
 
     async fn hello(
         &self,
-        request: tonic::Request<discovery::HelloRequest>,
-    ) -> std::result::Result<tonic::Response<discovery::HelloResponse>, tonic::Status> {
-        tracing::info!("{:#?}", request);
-        tracing::info!("{:#?}", request.remote_addr());
-        Err(tonic::Status::ok("ERROR".to_string()))
+        request: Request<HelloRequest>,
+    ) -> Result<Response<HelloResponse>, Status> {
+        info!(
+            "cluster node request: Hello ({})",
+            request.remote_addr().unwrap().ip()
+        );
+        debug!("{:?}", request);
+
+        let socket = request
+            .remote_addr()
+            .ok_or(Status::invalid_argument("couldn't parse IP address"))
+            .inspect_err(|err| error!("{}", err.to_string()))?;
+
+        let ip = match socket.ip() {
+            IpAddr::V4(ipv4) => ipv4.octets().to_vec(),
+            IpAddr::V6(ipv6) => ipv6.octets().to_vec(),
+        };
+
+        Ok(Response::new(HelloResponse {
+            redirect: None,
+            client_ip: ip,
+        }))
     }
 
-    async fn list(
-        &self,
-        request: tonic::Request<discovery::ListRequest>,
-    ) -> std::result::Result<tonic::Response<discovery::ListResponse>, tonic::Status> {
-        tracing::info!("{:#?}", request);
-        tracing::info!("{:#?}", request.remote_addr());
-        Err(tonic::Status::ok("ERROR".to_string()))
+    async fn list(&self, request: Request<ListRequest>) -> Result<Response<ListResponse>, Status> {
+        info!(
+            "cluster node request: List ({})",
+            request.remote_addr().unwrap().ip()
+        );
+        debug!("{:?}", request);
+        unimplemented!();
     }
 
     async fn affiliate_update(
         &self,
-        request: tonic::Request<discovery::AffiliateUpdateRequest>,
-    ) -> std::result::Result<tonic::Response<discovery::AffiliateUpdateResponse>, tonic::Status>
-    {
-        tracing::info!("{:#?}", request);
-        tracing::info!("{:#?}", request.remote_addr());
-        Err(tonic::Status::ok("ERROR".to_string()))
+        request: Request<AffiliateUpdateRequest>,
+    ) -> std::result::Result<Response<AffiliateUpdateResponse>, Status> {
+        info!(
+            "cluster node request: AffiliateUpdate ({})",
+            request.remote_addr().unwrap().ip()
+        );
+        debug!("{:?}", request);
+        unimplemented!();
     }
 
     async fn affiliate_delete(
         &self,
-        request: tonic::Request<discovery::AffiliateDeleteRequest>,
-    ) -> std::result::Result<tonic::Response<discovery::AffiliateDeleteResponse>, tonic::Status>
-    {
-        tracing::info!("{:#?}", request);
-        tracing::info!("{:#?}", request.remote_addr());
-        Err(tonic::Status::ok("ERROR".to_string()))
+        request: Request<AffiliateDeleteRequest>,
+    ) -> Result<Response<AffiliateDeleteResponse>, Status> {
+        info!(
+            "cluster node request: AffilliateDelete ({})",
+            request.remote_addr().unwrap().ip()
+        );
+        debug!("{:?}", request);
+        unimplemented!();
     }
 
     async fn watch(
         &self,
-        request: tonic::Request<discovery::WatchRequest>,
-    ) -> std::result::Result<tonic::Response<Self::WatchStream>, tonic::Status> {
-        tracing::info!("{:#?}", request);
-        tracing::info!("{:#?}", request.remote_addr());
-        Err(tonic::Status::ok("ERROR".to_string()))
+        request: Request<WatchRequest>,
+    ) -> Result<Response<Self::WatchStream>, Status> {
+        info!(
+            "cluster node request: Watch ({})",
+            request.remote_addr().unwrap().ip()
+        );
+        debug!("{:?}", request);
+        unimplemented!();
     }
 }
