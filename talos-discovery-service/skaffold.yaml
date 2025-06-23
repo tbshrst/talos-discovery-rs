@@ -1,0 +1,27 @@
+apiVersion: skaffold/v4beta1
+kind: Config
+metadata:
+  name: talos-discovery-service
+build:
+  tagPolicy:
+    sha256: {}
+  artifacts:
+    - image: localhost:32000/geekweek/talos-discovery-service
+      custom:
+        buildCommand: |
+          cargo build
+          cargo make docker-build-rust-debug
+          cargo make docker-push-rust
+  local:
+    useDockerCLI: true
+deploy:
+  helm:
+    releases:
+      - name: talos-discovery-service
+        chartPath: ./helm
+        valuesFiles:
+          - ./helm/values.yaml
+        setValues:
+          image.repository: localhost:32000/geekweek/talos-discovery-service
+          image.tag: latest
+        namespace: default

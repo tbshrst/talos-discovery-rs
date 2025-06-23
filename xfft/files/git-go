@@ -1,0 +1,97 @@
+#!/bin/bash
+
+usage() {
+	cat <<EOF
+Usage: $0 [-h] [-n] [-w] [-f] [-F] [-b branch] [-H head]
+
+Example:
+	- $0
+	- $0 -H HEAD~1
+	- $0 -b test
+	- $0 -b test -H HEAD~1
+EOF
+	exit 2
+}
+
+WITH_GERRIT_REF="refs/for/"
+DIRECT_REPO_REF="refs/heads/"
+
+head="HEAD"
+branch=""
+ref=$WITH_GERRIT_REF
+state="%ready"
+force=""
+
+while getopts "b:fFhnwH:" c; do
+	case $c in
+		b)
+			branch=${OPTARG}
+			;;
+		f)
+			force="--force-with-lease"
+			;;
+		F)
+			[ -z "$force" ] && force="--force"
+			;;
+		h)
+			usage
+			;;
+		H)
+			head=${OPTARG}
+			;;
+		n)
+			ref=$DIRECT_REPO_REF
+			;;
+		w)
+			state="%wip"
+			;;
+		*)
+			usage
+			;;
+	esac
+done
+
+if ! git -C . rev-parse 2> /dev/null; then
+	echo "Not a git repository"
+	exit 1
+fi
+
+remote=$(git remote get-url origin)
+if [ -z "${remote}" ]; then
+	echo "No remote found"
+	exit 1
+fi
+
+if [ -z "${branch}" ]; then
+	# Find the last commit with a reference to an origin-branch
+	# since the current branch might be detached.
+	i=0
+	while [ $i -lt 100 ]; do
+		branch=$(git branch --remote --no-abbrev --contains HEAD~$i | grep origin | grep -v -- '->' | tail -n 1 | sed "s/[[:blank:]]*origin\\///")
+		if [ -n "${branch}" ]; then
+			break
+		fi
+		let $((i+=1))
+	done
+
+	if [ -z "${branch}" ]; then
+		echo "No origin branch found"
+		exit 1
+	fi
+fi
+
+if { [ "$branch" == "master" ] || \
+     [ "$branch" == "main" ]; } && \
+     [ "$ref" == $DIRECT_REPO_REF ]; then
+	echo "cannot directly push to $branch"
+	exit 1
+fi
+
+if [ "$ref" == $DIRECT_REPO_REF ]; then
+	state=""
+else
+	force=""
+fi
+
+git push ${remote} ${head}:${ref}${branch}${state} ${force}
+

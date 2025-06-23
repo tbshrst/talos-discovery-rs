@@ -1,0 +1,34 @@
+---
+proxy_port: 8888
+proxy_host: tst-proxy.genua.de
+no_proxy:
+  - localhost
+  - 127.0.0.1
+  - 172.30.10.3
+  - 0.0.0.0
+  - 10.0.0.0/8
+  - 192.168.0.0/16
+  - 172.16.0.0/16
+  - "*.svc"
+  - "gitlab.genua.de"
+  - "*.genua.de"
+  - openstack.genua.de
+proxy_env:
+  http_proxy: "{{ proxy|default('http://' ~ proxy_host ~ ':' ~ proxy_port) }}"
+  https_proxy: "{{ proxy|default('http://' ~ proxy_host ~ ':' ~ proxy_port) }}"
+  no_proxy: "{{ no_proxy | join(',') }}"
+
+base_config_aptmirror: "ubuntu-mirror.genua.de"
+
+user: dev
+password: geekweek
+container_engine: podman # podman|docker
+upload_repository: true
+with_vnc: false
+num_vnc_sessions: 3
+with_microk8s: true
+with_k3srancher: false
+with_docker_prune: false
+
+metallb_ip_begin: 172.30.11.1
+metallb_ip_end: 172.30.11.254

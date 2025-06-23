@@ -1,0 +1,8 @@
+hosts:
+  - name: geekweek
+    flavor: m1.large
+    type: linux
+    image: ubuntu-jammy-2204
+
+ansible:
+  - playbook: playbook.yml

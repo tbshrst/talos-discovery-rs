@@ -1,0 +1,25 @@
+extend = [
+  { path = "docker-rust.toml" },
+  { path = "skaffold.toml" },
+]
+
+[tasks.podman-socket]
+workspace = false
+script = '''
+  if command -v podman > /dev/null && [ ! -S /var/run/podman/podman.sock ];
+  then
+    echo "podman socket not found, activating"
+    podman system service --time=0 &
+  fi
+'''
+
+[env]
+RUST_BUILD_DEBUG_DIR = "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/debug"
+IMAGE_REGISTRY = "localhost:32000"
+IMAGE = "localhost:32000/geekweek/talos-discovery-service:latest"
+DOCKERFILE = "${CARGO_MAKE_WORKING_DIRECTORY}/Dockerfile"
+CONTAINER_CMD = { script = ['''
+  if [ -x "$(command -v podman)" ]; then echo podman;
+  elif [ -x "$(command -v docker)" ]; then echo docker;
+  else "no container tool installed"; exit 1; fi
+'''] }

@@ -1,0 +1,254 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{g20beamer}[2020/07/24 ver 3.00]
+
+% use TrueType files directly when using luatex or xetex
+\RequirePackage{iftex}
+\expandafter\let\csname g20beamer@usefontspec\endcsname\undefined
+\ifluatex
+\expandafter\let\csname g20beamer@usefontspec\endcsname\relax
+\else
+\ifpdftex
+\expandafter\let\csname g20beamer@usefontspec\endcsname\relax
+\fi\fi
+\expandafter\ifx\csname g20beamer@usefontspec\endcsname\relax
+  \RequirePackage{fontspec}
+
+  \setmainfont[%
+    Path = fonts/ ,
+    Extension = .ttf ,
+    Ligatures = TeX ,
+    UprightFont = *-Light,
+    BoldFont = *-Medium,
+    ItalicFont = *-LightItalic,
+  ]{WorkSans}
+
+  \setmonofont[%
+    Path = fonts/ ,
+    Extension = .ttf ,
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+  ]{AnonymousPro}
+\else
+  % The fonts from the g20worksans package are tailored to pdftex and
+  % come with limitations such as only having 255 glyphs
+  % available. Use system fonts whenever possible
+  \RequirePackage{g20worksans}
+\fi
+
+\renewcommand\familydefault{\rmdefault}
+\RequirePackage{g20colors}
+\RequirePackage{tikz}
+\RequirePackage{changepage}
+\RequirePackage{ifthen}
+
+\strictpagecheck
+%\renewcommand{\familydefault}{\sfdefault}
+\RequirePackage{pgf}
+
+\renewcommand\UrlFont{\color{g20blue}\rmfamily}
+
+% define style
+\newcommand{\slidestyle}{even-odd}
+\newcommand{\setslidestyle}[1]{% enable style selection currently "even-odd", "plain", "blue" and "green" (use green in an invalid choice)
+	\renewcommand{\slidestyle}{#1}
+}
+
+\newcommand{\defaultrightmargin}{3.5cm}
+\newcommand{\plainrightmargin}{1.5cm}
+
+  \setbeamertemplate{itemize item}{\color{g20blue}\raisebox{0.25ex}{\tiny$\bullet$}}
+  \setbeamertemplate{itemize subitem}{\color{g20blue}\raisebox{0.25ex}{\tiny$\bullet$}}
+  \setbeamertemplate{itemize subsubitem}{\color{g20blue}\raisebox{0.25ex}{\tiny$\bullet$}}
+%	\beamertemplatelargepartpage
+%	\beamertemplatelargeframetitle
+%	\beamertemplateplaintoc
+%	\beamertemplatelargeblocks
+	\pgfdeclareimage[interpolate=true,width=2cm]{logo}{pics/genua-logo-screen-RGB.pdf}
+	\beamertemplatenavigationsymbolsempty
+%	\beamertemplatetransparentcovereddynamic
+	\setbeamercolor{section in toc}{fg=g20cleanwhite}
+	\setbeamercolor{subsection in toc}{fg=g20cleanwhite}
+	\setbeamercolor{section}{fg=g20blue}
+	\setbeamercolor{frametitle}{fg=g20blue}
+	\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+	\setbeamercolor{framesubtitle}{fg=g20blue}
+	\setbeamerfont{framesubtitle}{size=\scriptsize,series=\mdseries}
+	\setbeamerfont{title}{size=\huge,series=\bfseries}
+	\setbeamercolor{title}{fg=g20blue}
+	\setbeamerfont{subtitle}{size=\Large,series=\mdseries}
+	\setbeamercolor{subtitle}{fg=g20blue}
+	\setbeamercolor{structure}{fg=g20infoblue}
+	\setbeamercolor{alert}{fg=g20infored}
+
+  %\setbeamertemplate{frametitle}[default][left,leftskip=.5cm]
+  \setbeamertemplate{frametitle}{%
+    \begin{minipage}[t]{\textwidth}
+      \usebeamerfont{frametitle}\insertframetitle\par
+      \vskip0.1cm
+      \usebeamerfont{framesubtitle}\insertframesubtitle\par
+    \end{minipage}
+  }
+  \setbeamersize{text margin right=\defaultrightmargin}
+
+\setbeamertemplate{title page}{%
+	\vskip1cm
+	\begin{minipage}[t][6cm][t]{0.225\textwidth}
+		~
+	\end{minipage}
+	\begin{minipage}[t][6cm][t]{0.7\textwidth}
+		\usebeamerfont{title}\inserttitle\par
+		\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par
+	\end{minipage}
+}
+
+\defbeamertemplate*{footline}{title}{
+	\hskip3.5cm{\scriptsize\insertauthor\hfill\insertdate\quad~}\vskip5pt
+}
+
+\defbeamertemplate*{footline}{blue}{
+      \raisebox{5pt}{\makebox[\paperwidth]{\hspace*{14.5cm}\makebox[20pt]{\color{g20blue} \scriptsize\insertframenumber}}}
+}
+
+\defbeamertemplate*{footline}{white}{
+      \raisebox{5pt}{\makebox[\paperwidth]{\hspace*{14.5cm}\makebox[20pt]{\color{g20cleanwhite} \scriptsize\insertframenumber}}}
+}
+
+\defbeamertemplate*{headline}{title}{%
+  \vskip0.4cm
+    \hskip0.85cm{\tiny\upshape~}
+  \vskip0.4cm
+}
+
+\defbeamertemplate*{headline}{blue}{%
+  \vskip0.4cm
+    \hskip0.85cm{\tiny\upshape \insertshorttitle \ifx\insertsection\empty\else~|~\insertsection\fi}
+  \vskip0.4cm
+}
+
+\defbeamertemplate*{headline}{white}{%
+  \vskip0.4cm
+    \hskip0.85cm{\tiny\color{g20cleanwhite}\upshape \insertshorttitle}
+  \vskip0.4cm
+}
+
+\defbeamertemplate*{headline}{toc}
+{%
+  \vskip0.4cm
+    \hskip0.85cm{\tiny\color{g20cleanwhite}\upshape \insertshorttitle}
+  \vskip0.4cm
+}
+
+\defbeamertemplate*{footline}{toc}
+{%
+\raisebox{5pt}{\makebox[\paperwidth]{\hspace*{14.5cm}\makebox[20pt]{\color{g20blue} \scriptsize\insertframenumber}}}
+}
+
+\defbeamertemplate*{background canvas}{title}{%
+	\begin{tikzpicture}[remember picture]
+		\fill[color=g20cleanwhite] (0,0) rectangle (\paperwidth,\paperheight);
+		\fill[color=g20violet] (0,0) rectangle (10.75, \paperheight);
+		\fill[color=g20yellow] (3, 0) rectangle (3.2, 5);
+		\fill[color=g20green] (3.2, 0) rectangle (\paperwidth, 7.8);
+		\node[inner sep=0pt] (logo) at (14.6, 8.35) {\pgfuseimage{logo}};
+	\end{tikzpicture}
+}
+
+\defbeamertemplate*{background canvas}{green}{%
+	\begin{tikzpicture}[remember picture]
+		\fill[color=g20cleanwhite] (0,0) rectangle (\paperwidth,\paperheight);
+		\fill[color=g20green] (13, 0) rectangle (\paperwidth, 7.8);
+		\node[inner sep=0pt] (logo) at (14.6, 8.35) {\pgfuseimage{logo}};
+	\end{tikzpicture}
+}
+
+\defbeamertemplate*{background canvas}{blue}{%
+	\begin{tikzpicture}[remember picture]
+		\fill[color=g20cleanwhite] (0,0) rectangle (\paperwidth,\paperheight);
+		\fill[color=g20blue] (13, 0) rectangle (\paperwidth, 7.8);
+		\node[inner sep=0pt] (logo) at (14.6, 8.35) {\pgfuseimage{logo}};
+	\end{tikzpicture}
+}
+
+\defbeamertemplate*{background canvas}{plain}{%
+	\begin{tikzpicture}[remember picture]
+		\fill[color=g20cleanwhite] (0,0) rectangle (\paperwidth,\paperheight);
+		\node[inner sep=0pt] (logo) at (14.6, 8.35) {\pgfuseimage{logo}};
+	\end{tikzpicture}
+}
+
+\defbeamertemplate*{background canvas}{toc}{%
+	\begin{tikzpicture}[remember picture]
+		\fill[color=g20cleanwhite] (0,0) rectangle (\paperwidth,\paperheight);
+		\fill[color=g20blue] (0, 1) rectangle (13, \paperheight);
+		\fill[color=g20violet] (0, 0) rectangle (9.80, 1);
+		\fill[color=g20yellow] (5.8, 0.8) rectangle (13, 1);
+		\node[inner sep=0pt] (logo) at (14.6, 8.35) {\pgfuseimage{logo}};
+	\end{tikzpicture}
+}
+
+\setbeamertemplate{section page}{%
+   \begingroup
+   \begin{beamercolorbox}{section title}
+        \usebeamerfont{section title}\insertsection\par
+   \end{beamercolorbox}
+   \endgroup
+}
+
+
+\define@key{beamerframe}{tocframe}[true]{
+  \setbeamertemplate{background canvas}[toc]
+  \setbeamercolor{frametitle}{fg=g20cleanwhite}
+  \setbeamercolor{section title}{fg=g20cleanwhite}
+  \setbeamertemplate{headline}[white]
+  \setbeamertemplate{footline}[toc]
+}
+
+\define@key{beamerframe}{plain}[true]{
+  \setbeamertemplate{background canvas}[plain]
+  \setbeamertemplate{footline}[blue]
+}
+
+% set styles
+
+%% \frame{} is kind of broken abd cant use \BeforeBeginEnvironment
+\setbeamertemplate{background canvas}[title]
+\setbeamertemplate{headline}[title]
+\setbeamertemplate{footline}[title]
+
+%% use the correct style when in frame environment
+
+\BeforeBeginEnvironment{frame}{%
+	\setbeamercolor{frametitle}{fg=g20blue}
+  \ifnum \theframenumber=0 % check for titleframe
+	\setbeamertemplate{background canvas}[title]
+	\setbeamertemplate{headline}[title]
+	\setbeamertemplate{footline}[title]
+  \else
+    \setbeamertemplate{headline}[blue]
+    \ifthenelse{\equal{\slidestyle}{even-odd}}{%
+      \checkoddpage
+      \ifoddpage
+	\setbeamertemplate{background canvas}[green]
+	\setbeamertemplate{footline}[blue]
+      \else
+	\setbeamertemplate{background canvas}[blue]
+	\setbeamertemplate{footline}[white]
+     \fi
+     }{
+     \ifthenelse{\equal{\slidestyle}{plain}}{
+       \setbeamertemplate{background canvas}[plain]
+       \setbeamertemplate{footline}[blue]
+     }{
+     \ifthenelse{\equal{\slidestyle}{blue}}{
+       \setbeamertemplate{background canvas}[blue]
+       \setbeamertemplate{footline}[white]
+     }{
+       \setbeamertemplate{background canvas}[green]
+       \setbeamertemplate{footline}[blue]
+     }}}
+
+  \fi
+}
+
+\mode<all>

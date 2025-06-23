@@ -1,0 +1,101 @@
+- name: Install TigerVNC
+  block:
+  - name: Install packages
+    apt:
+      state: latest
+      update_cache: true
+      name:
+        - curl
+        - firefox
+        - tigervnc-standalone-server
+        - xfce4
+        - xfce4-goodies
+        - wget
+
+  - name: Remove screensaver
+    apt:
+      state: absent
+      name:
+        - xfce4-screensaver
+
+  - name: Install Chrome
+    shell: |
+      wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+      dpkg -i google-chrome-stable_current_amd64.deb
+      apt-get install -yf
+      dpkg -i google-chrome-stable_current_amd64.deb
+    args:
+      chdir: /root/.ansible
+    ignore_errors: true
+
+  - name: Install Edge
+    shell: |
+      curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+      install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
+      sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main" > \
+        /etc/apt/sources.list.d/microsoft-edge-dev.list'
+      apt update
+      apt install -y microsoft-edge-stable
+    args:
+      chdir: /root/.ansible
+
+  - name: Create vnc user directory
+    file:
+      path: /home/{{ user }}/.vnc
+      state: directory
+      owner: "{{ user }}"
+      group: "{{ user }}"
+      mode: '0755'
+
+  - name: Setup TigerVNC startup configuration
+    copy:
+      content: |
+        #!/bin/sh
+
+        unset SESSION_MANAGER
+        unset DBUS_SESSION_BUS_ADDRESS
+
+        /usr/bin/startxfce4
+        [ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
+        [ -r /home/{{ user }}/.Xresources ] && xrdb /home/{{ user }}/.Xresources
+        x-window-manager &
+      dest: /home/{{ user }}/.vnc/xstartup
+      owner: "{{ user }}"
+      group: "{{ user }}"
+      mode: '0755'
+
+  - name: Set VNC password file
+    shell: |
+      echo -n {{ password }} | vncpasswd -f > /home/{{ user }}/.vnc/passwd
+      chown {{ user }}:{{ user }} /home/{{ user }}/.vnc/passwd
+      chmod 600 /home/{{ user }}/.vnc/passwd
+
+  - name: Setup VNC systemd service
+    copy:
+      content: |
+        [Unit]
+        Description=Start TigerVNC server at startup
+        After=syslog.target network.target
+
+        [Service]
+        Type=forking
+        User={{ user }}
+        Group={{ user }}
+        WorkingDirectory=/home/{{ user }}
+
+        PIDFile=/home/{{ user }}/.vnc/localhost:590%i.pid
+        ExecStartPre=-/bin/sh -c "/usr/bin/vncserver -kill :%i > /dev/null 2>&1"
+        ExecStart=/usr/bin/vncserver -depth 24 -geometry 1920x1080 -localhost :%i
+        ExecStop=/usr/bin/vncserver -kill :%i
+
+        [Install]
+        WantedBy=multi-user.target
+      dest: /etc/systemd/system/vncserver@.service
+
+  - name: Start VNC service
+    systemd:
+      name: vncserver@{{ item }}
+      daemon_reload: yes
+      enabled: yes
+      state: started
+    loop: "{{ range(1, num_vnc_sessions + 1) | list }}"

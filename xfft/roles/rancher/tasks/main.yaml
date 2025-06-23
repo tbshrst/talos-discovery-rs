@@ -1,0 +1,21 @@
+- name: Install rancher with k3s
+  block:
+  - name: Install packages
+    apt:
+      state: latest
+      update_cache: true
+      name:
+        - curl
+
+  - name: Install k3s
+    shell: |
+      curl -sfL https://get.k3s.io | K3S_TOKEN=12345 sh -s - server --flannel-backend none
+
+  - name: Download and start rancher container for quick tryout
+    shell: |
+      docker run -d --restart=unless-stopped -p 80:80 -p 443:443 \
+        -e HTTP_PROXY="{{ proxy_env.http_proxy }}" \
+        -e HTTPS_PROXY="{{ proxy_env.http_proxy }}" \
+        -e NO_PROXY="{{ proxy_env.no_proxy }},cattle-system.svc,192.168.10.0/24,.svc,.cluster.local,example.com" \
+        --privileged rancher/rancher
+    ignore_errors: true

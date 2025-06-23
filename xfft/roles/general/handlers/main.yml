@@ -1,0 +1,13 @@
+---
+- name: Update-ca-certificates
+  become: true
+  ansible.builtin.command: update-ca-certificates
+  changed_when: false
+
+- name: Upload-repository
+  ansible.posix.synchronize:
+    src: ../../../..
+    dest: /home/{{ user }}
+    rsync_opts:
+    - "--chown={{ user }}:{{ user }}"
+

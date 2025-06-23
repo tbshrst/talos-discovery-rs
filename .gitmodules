@@ -1,0 +1,3 @@
+[submodule "presentation/g20beamer"]
+	path = presentation/g20beamer
+	url = git@gitlab.genua.de:carsten/g20beamer.git

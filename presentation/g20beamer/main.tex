@@ -1,0 +1,91 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{g24beamer}
+\usepackage[ngerman]{babel}
+\usepackage{tikz-network}
+
+\title{Titel der Präsentation}
+\subtitle{was soll schon schiefgehen}
+%\subtitle{Untertitel der Präsentation}
+\date{\today}
+\author{carsten@genua.de [P PD QAD]}
+
+\AtBeginSection{
+  \createsectionpage
+}
+
+\begin{document}
+\begin{frame}
+	\titlepage
+\end{frame}
+
+%\tableofcontents
+\begin{frame}[tocframe]
+  \frametitle{Agenda}
+  \tableofcontents
+\end{frame}
+
+\section[Eine erste Section]{Eine erste Section}
+\begin{frame}
+  \frametitle{\insertsection}
+  \framesubtitle{hmmm...}
+  foo
+  \begin{itemize}
+  \item bar
+  \item baz
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[quoteframe]
+  \frametitle{irgendwas schlaues}
+  \begin{quote}
+    Was ist die Antwort auf die Frage nach dem Sinn des Lebens, dem Universum und dem Rest? 42
+    -- Douglas Adams
+  \end{quote}
+\end{frame}
+
+\begin{frame}
+  \frametitle{mit 2 Slides}
+  auf denen auch ab und an was steht
+\end{frame}
+
+\section{Eine zweite Section}
+
+\begin{frame}[tocframe]
+  \frametitle{\insertsection}
+  \tableofcontents[currentsection]
+\end{frame}
+
+\subsection{Hat eine Subsection}
+\begin{frame}[plain]
+	\begin{itemize}
+		\item hier ohne Titel
+		\item in \lbrack plain\rbrack
+	\end{itemize}
+
+  \begin{important}
+    Und auch mit Dingen in einem Block
+  \end{important}
+\end{frame}
+
+\begin{frame}
+\frametitle{TikZ}
+  \begin{center}
+    \begin{tikzpicture}[multilayer=3d]
+    \Vertex[x=0.5,IdAsLabel,layer=1]{A}
+    \Vertex[x=1.5,IdAsLabel,layer=1]{B}
+    \Vertex[x=1.5,IdAsLabel,layer=2]{C}
+    \Edge[bend=60](A)(B)
+    \Edge[style=dashed,color=g20yellow](B)(C)
+    \Edge(C)(C)
+    \Plane[x=-.5,y=-.5,width=3,height=2.5,color=g20green,layer=2,NoBorder]
+    \Plane[x=-.5,y=-.5,width=3,height=2.5,color=g20violet]
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\subsection{Hat eine weitere recht lange Subsection}
+
+\section{Abschluss}
+\socials
+
+\end{document}

@@ -1,0 +1,31 @@
+machine:
+  network:
+    hostname: ${hostname}
+    nameservers:
+    - 10.254.0.68
+  nodeLabels:
+    topology.kubernetes.io/region: ${cluster_name}
+    topology.kubernetes.io/zone: ${cluster_name}
+  env:
+    https_proxy: http://tst-proxy.genua.de:8888
+    http_proxy: http://tst-proxy.genua.de:8888
+    no_proxy: ${join(",", compact(["cluster.local","*.genua.de","openstack.genua.de","gitlab.genua.de","${network_cidr}"]))}
+  install:
+    image: ${installer_image}
+  features:
+    hostDNS:
+      enabled: true
+      forwardKubeDNSToHost: true
+  time:
+    servers:
+    - 192.168.217.37
+cluster:
+  network:
+    dnsDomain: "cluster.local"
+  controlPlane:
+      endpoint: ${endpoint_url}
+  discovery:
+    enabled: true
+    registries:
+      service:
+        endpoint: ${discovery_service_url}

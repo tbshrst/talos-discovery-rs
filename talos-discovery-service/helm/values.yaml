@@ -1,0 +1,4 @@
+image:
+  repository: localhost:32000/geekweek/talos-discovery-service
+  pullPolicy: Always
+  tag: "latest"

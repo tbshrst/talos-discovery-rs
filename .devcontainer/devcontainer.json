@@ -1,0 +1,58 @@
+{
+  "name": "geekweek",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "runArgs": [
+    "--name=geekweek",
+    "--network=host",
+    "--privileged"
+  ],
+  "mounts": [
+    "source=${localEnv:HOME}/.kube,target=/root/.kube,type=bind,consistency=cached",
+    "source=containers,target=/var/lib/containers,type=volume"
+  ],
+  "containerEnv": {
+    "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+    "HTTPS_PROXY": "${localEnv:HTTP_PROXY}",
+    "http_proxy": "${localEnv:HTTP_PROXY}",
+    "https_proxy": "${localEnv:HTTP_PROXY}",
+    "no_proxy": "${localEnv:NO_PROXY}",
+    "NO_PROXY": "${localEnv:NO_PROXY}"
+    // "DOCKER_HOST": "unix:///var/run/user/0/container.sock", # docker
+    // "CONTAINER_HOST": "unix:///var/run/user/0/container.sock",
+  },
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.formatOnType": true,
+        "editor.tabSize": 4,
+        "files.watcherExclude": {},
+        "http.proxy": "http://tst-proxy.genua.de:8888",
+        "https.proxy": "http://tst-proxy.genua.de:8888",
+        "rust-analyzer.check.command": "clippy",
+        "terminal.integrated.inheritEnv": true,
+        "[yaml]": {
+          "editor.tabSize": 2
+        },
+        "[tf]": {
+          "editor.tabSize": 2
+        },
+        "[toml]": {
+          "editor.tabSize": 2
+        },
+      },
+      "extensions": [
+        "4ops.terraform",
+        "hashicorp.terraform",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "redhat.vscode-yaml",
+        "rust-lang.rust-analyzer"
+      ]
+    }
+  }
+}

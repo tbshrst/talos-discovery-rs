@@ -1,0 +1,207 @@
+\documentclass[
+  $if(fontsize)$
+    $fontsize$,
+  $else$
+    10pt,
+  $endif$
+  $if(papersize)$
+    $papersize$paper,
+  $else$
+    a4paper,
+  $endif$
+  pdf]{scrartcl}
+
+\usepackage{pgfplotstable}
+\usetikzlibrary{arrows}
+
+\usepackage{fontspec}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\graphicspath{{./g20beamer},{./}}
+\usepackage{geometry}
+\geometry{
+  left=3.5cm, right=3cm, headsep=1.5cm
+}
+\newcommand*{\useportrait}{%
+  \clearpage
+  \KOMAoptions{paper=portrait,DIV=current}%switch to portrait
+  \newgeometry{% geometry settings for portrait
+    left=3.5cm, right=3cm, headsep=1.5cm
+  }%
+  \fancyhfoffset{0pt}% <- recalculate head and foot width for fancyhdr
+}
+\newcommand*{\uselandscape}{%
+  \clearpage
+  \KOMAoptions{paper=landscape,DIV=current}%switch to landscape
+  \newgeometry{% geometry settings for landscap
+    left=3.5cm, right=-6cm, headsep=1.5cm, bottom=12cm
+  }%
+  \fancyhfoffset{0pt}% recalculate head and foot width for fancyhdr
+}
+
+$if(listings)$
+\usepackage{listings}
+\newcommand{\passthrough}[1]{#1}
+\lstset{defaultdialect=[5.3]Lua}
+\lstset{defaultdialect=[x86masm]Assembler}
+$endif$
+$if(listings-no-page-break)$
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{lstlisting}{\par\noindent\begin{minipage}{\linewidth}}
+\AfterEndEnvironment{lstlisting}{\end{minipage}\par\addvspace{\topskip}}
+$endif$
+$if(lhs)$
+\lstnewenvironment{code}{\lstset{language=Haskell,basicstyle=\small\ttfamily}}{}
+$endif$
+$if(highlighting-macros)$
+$highlighting-macros$
+$endif$
+
+
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+\usepackage{g20colors}
+
+$for(header-includes)$
+$header-includes$
+$endfor$
+
+$if(lang)$
+\usepackage[$babel-lang$]{babel}
+$else$
+\usepackage[ngerman]{babel}
+$endif$
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+\author{Carsten Arzig}
+\date{\today}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+\pagestyle{fancy}
+
+\usepackage{etoolbox}
+
+\usepackage{scrlayer}
+\DeclareNewLayer[
+  background,
+  rightmargin,
+  contents={%
+    \parbox[b][\layerheight][c]{\dimexpr\footskip+\footheight\relax}{%
+	    \hfill\rotatebox{90}{Seite \thepage \hspace{10cm}\MyAuthor}}}
+]{lscape.foot}
+\DeclareNewLayer[
+  background,
+  textarea,
+  addhoffset=\dimexpr-\headsep-\headheight\relax,
+  width=\dimexpr\headsep+\headheight\relax,
+  contents={\hfill\rotatebox{90}{{\color{g20green}{\textbf{Excellence in Digital Security}}} \hspace{10cm} \includegraphics[width=3.5cm]{pics/genua-logo-screen-RGB.pdf}}\hspace*{\headsep}}
+]{lscape.head}
+\DeclareNewPageStyleByLayers{lscape}{lscape.foot,lscape.head}
+
+\fancyhead[L]{\color{g20green}{\textbf{Excellence in Digital Security}}}
+\fancyhead[R]{\includegraphics[width=3.5cm]{pics/genua-logo-screen-RGB.pdf}}
+\fancyfoot[R]{\thepage}
+\fancyfoot[C]{}
+
+\setlength\parindent{0pt}
+\renewcommand{\headrulewidth}{0pt}
+
+\setmainfont[%
+	Path = fonts/ ,
+	Extension = .ttf ,
+	Ligatures = TeX ,
+	UprightFont = *-Light,
+	BoldFont = *-Medium,
+	ItalicFont = *-LightItalic,
+]{WorkSans}
+
+\setmonofont[%
+	Path = fonts/ ,
+	Extension = .ttf ,
+	UprightFont = *-Regular,
+	BoldFont = *-Bold,
+	ItalicFont = *-Italic,
+]{AnonymousPro}
+
+\renewcommand\familydefault{\rmdefault}
+
+\newenvironment{myblock}{%
+    \tcolorbox[beamer,%
+    noparskip,breakable,
+    colback=lightgray!30,colframe=gray%,
+    ]}%
+    {\endtcolorbox}
+
+$if(title)$
+\title{$title$$if(thanks)$\thanks{$thanks$}$endif$}
+$endif$
+$if(subtitle)$
+$if(beamer)$
+$else$
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+$endif$
+\subtitle{$subtitle$}
+$endif$
+\author{$for(author)$$author$$sep$ \and $endfor$}
+\date{$date$}
+$if(beamer)$
+$if(institute)$
+\institute{$for(institute)$$institute$$sep$ \and $endfor$}
+$endif$
+$if(titlegraphic)$
+\titlegraphic{\includegraphics{$titlegraphic$}}
+$endif$
+$if(logo)$
+\logo{\includegraphics{$logo$}}
+$endif$
+$endif$
+
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+
+\begin{document}
+$if(toc)$
+$if(toc-title)$
+\renewcommand*\contentsname{$toc-title$}
+$endif$
+$if(beamer)$
+\begin{frame}[allowframebreaks]
+$if(toc-title)$
+  \frametitle{$toc-title$}
+$endif$
+  \tableofcontents[hideallsubsections]
+\end{frame}
+$if(toc-own-page)$
+\newpage
+$endif$
+$else$
+{
+$if(colorlinks)$
+\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
+$endif$
+\setcounter{tocdepth}{$toc-depth$}
+\tableofcontents
+$if(toc-own-page)$
+\newpage
+$endif$
+}
+$endif$
+$endif$
+
+$body$
+\end{document}

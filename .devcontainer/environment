@@ -1,0 +1,6 @@
+http_proxy=http://tst-proxy.genua.de:8888
+https_proxy=http://tst-proxy.genua.de:8888
+no_proxy=127.0.0.1,localhost,.genua.de
+HTTP_PROXY=http://tst-proxy.genua.de:8888
+HTTPS_PROXY=http://tst-proxy.genua.de:8888
+NO_PROXY=127.0.0.1,localhost,.genua.de
