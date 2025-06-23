@@ -1,144 +1,144 @@
 - name: Install docker
   block:
-  - name: Install packages
-    apt:
-      state: latest
-      update_cache: true
-      name:
-        - curl
-        - ca-certificates
-        - gnupg
+    - name: Install packages
+      apt:
+        state: latest
+        update_cache: true
+        name:
+          - curl
+          - ca-certificates
+          - gnupg
 
-  - name: Add keyring
-    shell: |
-      install -m 0755 -d /etc/apt/keyrings
-      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-        gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-      chmod a+r /etc/apt/keyrings/docker.gpg
-      echo \
-        "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] \
-        https://download.docker.com/linux/ubuntu \
-        "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-        tee /etc/apt/sources.list.d/docker.list > /dev/null
+    - name: Add keyring
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+          gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        echo \
+          "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] \
+          https://download.docker.com/linux/ubuntu \
+          "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+          tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-  - name: Install packages
-    apt:
-      state: latest
-      update_cache: true
-      name:
-        - containerd.io
-        - docker-buildx-plugin
-        - docker-ce
-        - docker-ce-cli
-        - docker-ce-rootless-extras
-        - docker-compose-plugin
-        - uidmap
+    - name: Install packages
+      apt:
+        state: latest
+        update_cache: true
+        name:
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-ce
+          - docker-ce-cli
+          - docker-ce-rootless-extras
+          - docker-compose-plugin
+          - uidmap
 
-  - name: Make sure the root level docker service is stopped and disabled
-    ansible.builtin.systemd:
-      name: "{{ item }}"
-      state: stopped
-      enabled: false
-    loop:
-      - "docker.service"
-      - "docker.socket"
-
-  - name: Turn on linger for all users
-    become: true
-    ansible.builtin.command:
-    args:
-      cmd: "loginctl enable-linger {{ user }}"
-      creates: "/var/lib/systemd/linger/{{ user }}"
-
-  - name: Create docker user dir
-    file:
-      path: /home/{{ user }}/.docker
-      state: directory
-      owner: "{{ user }}"
-      group: "{{ user }}"
-      mode: '0744'
-
-  - name: Run the rootless docker installer
-    become: true
-    become_user: "{{ user }}"
-    shell: |
-      export XDG_RUNTIME_DIR=/run/user/$(id -u)
-      dockerd-rootless-setuptool.sh install
-      echo "export XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> ~/.bashrc
-      echo "export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock" >> ~/.bashrc
-
-  - name: Create docker systemd dir
-    file:
-      path: /home/{{ user }}/.config/systemd/user/docker.service.d/
-      state: directory
-      recurse: true
-
-  - name: Copy docker systemd proxy settings
-    template:
-      src: files/docker_proxy_conf.j2
-      dest: /home/{{ user }}/.config/systemd/user/docker.service.d/http-proxy.conf
-      mode: "0600"
-
-  - name: Docker prune images
-    block:
-    - name: Setup Docker prune service
-      copy:
-        content: |
-          [Unit]
-          Description=Runs docker image prune
-          Wants=docker-image-prune.timer
-
-          [Service]
-          Type=oneshot
-          ExecStart=/usr/bin/docker image prune -f
-
-          [Install]
-          WantedBy=multi-user.target
-        dest: /etc/systemd/system/docker-image-prune.service
-
-    - name: Setup Docker prune timer
-      copy:
-        content: |
-          [Unit]
-          Description=Automatically runs docker image prune
-          Requires=docker-image-prune.service
-
-          [Timer]
-          Unit=docker-image-prune.service
-          OnCalendar=*-*-* 03:30:00
-          Persistent=true
-
-          [Install]
-          WantedBy=timers.target
-        dest: /etc/systemd/system/docker-image-prune.timer
-
-    - name: Start Docker prune service
-      systemd:
+    - name: Make sure the root level docker service is stopped and disabled
+      ansible.builtin.systemd:
         name: "{{ item }}"
-        daemon_reload: yes
-        enabled: yes
-        state: started
+        state: stopped
+        enabled: false
       loop:
-      - docker-image-prune.service
-      - docker-image-prune.timer
+        - "docker.service"
+        - "docker.socket"
 
-    when: with_docker_prune | default('true') == true
+    - name: Turn on linger for all users
+      become: true
+      ansible.builtin.command:
+      args:
+        cmd: "loginctl enable-linger {{ user }}"
+        creates: "/var/lib/systemd/linger/{{ user }}"
 
-  - name: Open docker socket permissions
-    file:
-      path: /var/run/docker.sock
-      mode: "0666"
+    - name: Create docker user dir
+      file:
+        path: /home/{{ user }}/.docker
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0744"
 
-  - name: Register uid of {{ user }}
-    command: id -u {{ user }}
-    register: uid
+    - name: Run the rootless docker installer
+      become: true
+      become_user: "{{ user }}"
+      shell: |
+        export XDG_RUNTIME_DIR=/run/user/$(id -u)
+        dockerd-rootless-setuptool.sh install
+        echo "export XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> ~/.bashrc
+        echo "export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock" >> ~/.bashrc
 
-  - name: Restart docker service
-    become_user: "{{ user }}"
-    systemd_service:
-      name: docker
-      scope: user
-      daemon_reload: true
-      state: restarted
-    environment:
-      XDG_RUNTIME_DIR: /run/user/{{uid.stdout}}
+    - name: Create docker systemd dir
+      file:
+        path: /home/{{ user }}/.config/systemd/user/docker.service.d/
+        state: directory
+        recurse: true
+
+    - name: Copy docker systemd proxy settings
+      template:
+        src: files/docker_proxy_conf.j2
+        dest: /home/{{ user }}/.config/systemd/user/docker.service.d/http-proxy.conf
+        mode: "0600"
+
+    - name: Docker prune images
+      block:
+        - name: Setup Docker prune service
+          copy:
+            content: |
+              [Unit]
+              Description=Runs docker image prune
+              Wants=docker-image-prune.timer
+
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/bin/docker image prune -f
+
+              [Install]
+              WantedBy=multi-user.target
+            dest: /etc/systemd/system/docker-image-prune.service
+
+        - name: Setup Docker prune timer
+          copy:
+            content: |
+              [Unit]
+              Description=Automatically runs docker image prune
+              Requires=docker-image-prune.service
+
+              [Timer]
+              Unit=docker-image-prune.service
+              OnCalendar=*-*-* 03:30:00
+              Persistent=true
+
+              [Install]
+              WantedBy=timers.target
+            dest: /etc/systemd/system/docker-image-prune.timer
+
+        - name: Start Docker prune service
+          systemd:
+            name: "{{ item }}"
+            daemon_reload: yes
+            enabled: yes
+            state: started
+          loop:
+            - docker-image-prune.service
+            - docker-image-prune.timer
+
+      when: with_docker_prune | default('true') == true
+
+    - name: Open docker socket permissions
+      file:
+        path: /var/run/docker.sock
+        mode: "0666"
+
+    - name: Register uid of {{ user }}
+      command: id -u {{ user }}
+      register: uid
+
+    - name: Restart docker service
+      become_user: "{{ user }}"
+      systemd_service:
+        name: docker
+        scope: user
+        daemon_reload: true
+        state: restarted
+      environment:
+        XDG_RUNTIME_DIR: /run/user/{{uid.stdout}}

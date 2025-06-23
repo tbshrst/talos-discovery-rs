@@ -4,40 +4,42 @@
   become: true
   vars_files:
     - vars.yml
-  environment:
-    "{{ proxy_env }}"
+  environment: "{{ proxy_env }}"
 
   pre_tasks:
-  - name: Create tmp directory
-    file:
-      path: "{{ item }}"
-      state: directory
-      recurse: true
-      mode: '0777'
-    loop:
-      - /root/.ansible/tmp
+    - name: Create tmp directory
+      file:
+        path: "{{ item }}"
+        state: directory
+        recurse: true
+        mode: "0777"
+      loop:
+        - /root/.ansible/tmp
 
   post_tasks:
-  - name: Cleanup tmp directories
-    file:
-      path: "{{ item }}"
-      state: absent
-    loop:
-      - /root/.ansible
-      - /home/ubuntu/.ansible
-      - /home/{{ user }}/.ansible
-    ignore_errors: true
+    - name: Cleanup tmp directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /root/.ansible
+        - /home/ubuntu/.ansible
+        - /home/{{ user }}/.ansible
+      ignore_errors: true
 
   tasks:
-  - include_role:
-      name: "{{ role.name }}"
-    when: role.install | bool
-    loop:
-      - { name: "general", install: true }
-      - { name: "docker", install: "{{ container_engine == 'docker' }}" }
-      - { name: "podman", install: "{{ container_engine == 'podman' }}" }
-      - { name: "microk8s", install: "{{ with_microk8s | default('true') }}" }
-      - { name: "rancher", install: "{{ with_k3srancher | default('false') }}" }
-      - { name: "vnc", install: "{{ with_vnc | default('false') }}" }
-    loop_control:
-      loop_var: role
+    - include_role:
+        name: "{{ role.name }}"
+      when: role.install | bool
+      loop:
+        - { name: "general", install: true }
+        - { name: "docker", install: "{{ container_engine == 'docker' }}" }
+        - { name: "podman", install: "{{ container_engine == 'podman' }}" }
+        - { name: "microk8s", install: "{{ with_microk8s | default('true') }}" }
+        - {
+            name: "rancher",
+            install: "{{ with_k3srancher | default('false') }}",
+          }
+        - { name: "vnc", install: "{{ with_vnc | default('false') }}" }
+      loop_control:
+        loop_var: role

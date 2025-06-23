@@ -1,172 +1,172 @@
 - name: General Settings
   block:
-  - debug: msg="Notify repository upload handler"
-    notify: Upload-repository
-    changed_when: true
-    when: upload_repository
+    - debug: msg="Notify repository upload handler"
+      notify: Upload-repository
+      changed_when: true
+      when: upload_repository
 
-  - name: Disable firewall
-    shell: |
-      ufw disable
+    - name: Disable firewall
+      shell: |
+        ufw disable
 
-  - name: Copy genua-certificates to remote system
-    copy:
-      src: files/bashrc.sh
-      dest: /usr/local/share/ca-certificates
-      mode: '644'
-      owner: root
-      group: root
-    loop:
-      - files/genua-it.crt
-      - files/genua-sys.crt
-    notify:
-      - Update-ca-certificates
+    - name: Copy genua-certificates to remote system
+      copy:
+        src: files/bashrc.sh
+        dest: /usr/local/share/ca-certificates
+        mode: "644"
+        owner: root
+        group: root
+      loop:
+        - files/genua-it.crt
+        - files/genua-sys.crt
+      notify:
+        - Update-ca-certificates
 
-  - name: Restart systemd-resolved
-    ansible.builtin.systemd_service:
-      name: systemd-resolved
-      state: restarted
+    - name: Restart systemd-resolved
+      ansible.builtin.systemd_service:
+        name: systemd-resolved
+        state: restarted
 
-  - name: Create APT directory
-    shell: |
-      mkdir -p /etc/apt/apt.conf.d/
+    - name: Create APT directory
+      shell: |
+        mkdir -p /etc/apt/apt.conf.d/
 
-  - name: Add proxy entries for APT
-    lineinfile:
-      path: /etc/apt/apt.conf.d/proxy.conf
-      state: present
-      line: "{{ item }}"
-      regexp: "{{ item }}"
-      insertafter: EOF
-      create: true
-    loop:
-      - Acquire::http::Proxy "{{ proxy_env.http_proxy }}";
-      - Acquire::https::Proxy "{{ proxy_env.https_proxy }}";
+    - name: Add proxy entries for APT
+      lineinfile:
+        path: /etc/apt/apt.conf.d/proxy.conf
+        state: present
+        line: "{{ item }}"
+        regexp: "{{ item }}"
+        insertafter: EOF
+        create: true
+      loop:
+        - Acquire::http::Proxy "{{ proxy_env.http_proxy }}";
+        - Acquire::https::Proxy "{{ proxy_env.https_proxy }}";
 
-  - name: Disable proxy for internal Apt mirror
-    lineinfile:
-      create: yes
-      name: /etc/apt/apt.conf
-      owner: root
-      group: root
-      mode: 0644
-      regexp: '^Acquire::{{ item }}::Proxy::.+ DIRECT;$'
-      line: 'Acquire::{{ item }}::Proxy::{{ base_config_aptmirror }} DIRECT;'
-    with_items:
-      - ftp
-      - http
-      - https
-    when: base_config_aptmirror is defined
+    - name: Disable proxy for internal Apt mirror
+      lineinfile:
+        create: yes
+        name: /etc/apt/apt.conf
+        owner: root
+        group: root
+        mode: 0644
+        regexp: "^Acquire::{{ item }}::Proxy::.+ DIRECT;$"
+        line: "Acquire::{{ item }}::Proxy::{{ base_config_aptmirror }} DIRECT;"
+      with_items:
+        - ftp
+        - http
+        - https
+      when: base_config_aptmirror is defined
 
-  - name: Set proxy for snap
-    shell: |
-      snap set system proxy.http="{{ proxy_env.http_proxy }}"
-      snap set system proxy.https="{{ proxy_env.https_proxy }}"
+    - name: Set proxy for snap
+      shell: |
+        snap set system proxy.http="{{ proxy_env.http_proxy }}"
+        snap set system proxy.https="{{ proxy_env.https_proxy }}"
 
-  - name: Install packages
-    apt:
-      state: latest
-      update_cache: true
-      name:
-        - curl
-        - htop
-        - jq
-        - net-tools
-        - tmux
-        - unzip
-        - vim
-        - wget
-        - nfs-kernel-server
+    - name: Install packages
+      apt:
+        state: latest
+        update_cache: true
+        name:
+          - curl
+          - htop
+          - jq
+          - net-tools
+          - tmux
+          - unzip
+          - vim
+          - wget
+          - nfs-kernel-server
 
-  - name: Add proxy entries to /etc/environment
-    lineinfile:
-      path: /etc/environment
-      state: present
-      line: "{{ item }}"
-      regexp: "{{ item }}"
-      insertafter: EOF
-      create: true
-    loop:
-      - http_proxy={{ proxy_env.http_proxy }}
-      - HTTP_PROXY={{ proxy_env.http_proxy }}
-      - https_proxy={{ proxy_env.https_proxy }}
-      - HTTPS_PROXY={{ proxy_env.https_proxy }}
-      - no_proxy={{ proxy_env.no_proxy }}
-      - NO_PROXY={{ proxy_env.no_proxy }}
+    - name: Add proxy entries to /etc/environment
+      lineinfile:
+        path: /etc/environment
+        state: present
+        line: "{{ item }}"
+        regexp: "{{ item }}"
+        insertafter: EOF
+        create: true
+      loop:
+        - http_proxy={{ proxy_env.http_proxy }}
+        - HTTP_PROXY={{ proxy_env.http_proxy }}
+        - https_proxy={{ proxy_env.https_proxy }}
+        - HTTPS_PROXY={{ proxy_env.https_proxy }}
+        - no_proxy={{ proxy_env.no_proxy }}
+        - NO_PROXY={{ proxy_env.no_proxy }}
 
-  - name: Create dev user
-    user:
-      state: present
-      name: "{{ user }}"
-      password: "{{ password | password_hash('sha512', 'mysecretsalt') }}"
-      shell: /bin/bash
-      groups: sudo
-      append: yes
+    - name: Create dev user
+      user:
+        state: present
+        name: "{{ user }}"
+        password: "{{ password | password_hash('sha512', 'mysecretsalt') }}"
+        shell: /bin/bash
+        groups: sudo
+        append: yes
 
-  - name: Copy gitconfig config to remote system
-    copy:
-      src: files/bashrc.sh
-      dest: /root/.ansible/tmp/
+    - name: Copy gitconfig config to remote system
+      copy:
+        src: files/bashrc.sh
+        dest: /root/.ansible/tmp/
 
-  - name: Copy git-go to remote system
-    copy:
-      src: files/git-go
-      dest: /usr/local/bin/
-      mode: '0755'
+    - name: Copy git-go to remote system
+      copy:
+        src: files/git-go
+        dest: /usr/local/bin/
+        mode: "0755"
 
-  - name: Merge .bashrc config
-    shell: |
-      cat /root/.ansible/tmp/bashrc.sh >> /home/{{ user }}/.bashrc
+    - name: Merge .bashrc config
+      shell: |
+        cat /root/.ansible/tmp/bashrc.sh >> /home/{{ user }}/.bashrc
 
-  - name: Looking for local gitconfig config
-    stat:
-      path: ~/.gitconfig
-    register: gitconfig_existent
-    delegate_to: localhost
-    become: false
+    - name: Looking for local gitconfig config
+      stat:
+        path: ~/.gitconfig
+      register: gitconfig_existent
+      delegate_to: localhost
+      become: false
 
-  - name: Copy gitconfig config to remote system
-    copy:
-      src: ~/.gitconfig
-      dest: /home/{{ user }}/
-    when: gitconfig_existent.stat.exists
+    - name: Copy gitconfig config to remote system
+      copy:
+        src: ~/.gitconfig
+        dest: /home/{{ user }}/
+      when: gitconfig_existent.stat.exists
 
-  - name: Looking for local tmux config
-    stat:
-      path: ~/.tmux.conf
-    register: tmux_existent
-    delegate_to: localhost
-    become: false
+    - name: Looking for local tmux config
+      stat:
+        path: ~/.tmux.conf
+      register: tmux_existent
+      delegate_to: localhost
+      become: false
 
-  - name: Copy tmux config to remote system
-    copy:
-      src: ~/.tmux.conf
-      dest: /home/{{ user }}/
-    when: tmux_existent.stat.exists
+    - name: Copy tmux config to remote system
+      copy:
+        src: ~/.tmux.conf
+        dest: /home/{{ user }}/
+      when: tmux_existent.stat.exists
 
-  - name: Looking for local vim config
-    stat:
-      path: ~/.vimrc
-    register: vim_existent
-    delegate_to: localhost
-    become: false
+    - name: Looking for local vim config
+      stat:
+        path: ~/.vimrc
+      register: vim_existent
+      delegate_to: localhost
+      become: false
 
-  - name: Copy vim config to remote system
-    copy:
-      src: ~/.vimrc
-      dest: /home/{{ user }}/
-    when: vim_existent.stat.exists
+    - name: Copy vim config to remote system
+      copy:
+        src: ~/.vimrc
+        dest: /home/{{ user }}/
+      when: vim_existent.stat.exists
 
-  - name: Setup nfs
-    shell: |
-      mkdir -p /srv/nfs
-      echo "/srv/nfs  127.0.0.1(rw,async,no_subtree_check)" >> /etc/exports
+    - name: Setup nfs
+      shell: |
+        mkdir -p /srv/nfs
+        echo "/srv/nfs  127.0.0.1(rw,async,no_subtree_check)" >> /etc/exports
 
-  - name: Restart nfs host
-    shell: |
-      systemctl restart nfs-kernel-server
+    - name: Restart nfs host
+      shell: |
+        systemctl restart nfs-kernel-server
 
-  - name: Prepare nfs directory
-    shell: |
-      mkdir -p /srv/nfs/pv-geekweek-storage
-      chown 10000:10000 /srv/nfs/pv-geekweek-storage
+    - name: Prepare nfs directory
+      shell: |
+        mkdir -p /srv/nfs/pv-geekweek-storage
+        chown 10000:10000 /srv/nfs/pv-geekweek-storage

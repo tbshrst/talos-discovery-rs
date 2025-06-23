@@ -1,110 +1,110 @@
 - name: Install microk8s
   block:
-  - name: Set proxy for snap
-    shell: |
-      snap set system proxy.http="{{ proxy_env.http_proxy }}"
-      snap set system proxy.https="{{ proxy_env.https_proxy }}"
+    - name: Set proxy for snap
+      shell: |
+        snap set system proxy.http="{{ proxy_env.http_proxy }}"
+        snap set system proxy.https="{{ proxy_env.https_proxy }}"
 
-  - name: Install microk8s
-    snap:
-      name: microk8s
-      channel: 1.28/stable
-      classic: true
+    - name: Install microk8s
+      snap:
+        name: microk8s
+        channel: 1.28/stable
+        classic: true
 
-  - name: Enable microk8s addons
-    shell: |
-      microk8s enable registry
-      microk8s enable dashboard
-      microk8s enable dns
-      microk8s enable ingress
-      microk8s enable helm3
-      microk8s enable metallb:{{ metallb_ip_begin }}-{{ metallb_ip_end }}
-    timeout: 600
+    - name: Enable microk8s addons
+      shell: |
+        microk8s enable registry
+        microk8s enable dashboard
+        microk8s enable dns
+        microk8s enable ingress
+        microk8s enable helm3
+        microk8s enable metallb:{{ metallb_ip_begin }}-{{ metallb_ip_end }}
+      timeout: 600
 
-  - name: Set disk pressure threshold
-    lineinfile:
-      path: /var/snap/microk8s/current/args/kubelet
-      state: present
-      owner: root
-      group: microk8s
-      line: "{{ item }}"
-      regexp: "{{ item }}"
-      insertafter: EOF
-      create: true
-    loop:
-      - --image-gc-low-threshold=30
-      - --image-gc-high-threshold=40
+    - name: Set disk pressure threshold
+      lineinfile:
+        path: /var/snap/microk8s/current/args/kubelet
+        state: present
+        owner: root
+        group: microk8s
+        line: "{{ item }}"
+        regexp: "{{ item }}"
+        insertafter: EOF
+        create: true
+      loop:
+        - --image-gc-low-threshold=30
+        - --image-gc-high-threshold=40
 
-  - name: Restart microk8s
-    shell: |
-      microk8s stop
-      microk8s start
-    timeout: 180
+    - name: Restart microk8s
+      shell: |
+        microk8s stop
+        microk8s start
+      timeout: 180
 
-  - name: Add microk8s private registry entry to docker
-    template:
-      src: files/docker_microk8s_registry.j2
-      dest: /etc/docker/daemon.json
-      mode: "0644"
-    when: container_engine == 'docker'
+    - name: Add microk8s private registry entry to docker
+      template:
+        src: files/docker_microk8s_registry.j2
+        dest: /etc/docker/daemon.json
+        mode: "0644"
+      when: container_engine == 'docker'
 
-  - name: Add microk8s private registry to podman
-    shell: |
-      cat > /etc/containers/registries.conf.d/localhost.conf <<EOF
-      [[registry]]
-      location = "localhost:32000"
-      insecure = true
-      EOF
-    when: container_engine == 'podman'
+    - name: Add microk8s private registry to podman
+      shell: |
+        cat > /etc/containers/registries.conf.d/localhost.conf <<EOF
+        [[registry]]
+        location = "localhost:32000"
+        insecure = true
+        EOF
+      when: container_engine == 'podman'
 
-  - name: Add microk8s bash completion
-    shell: |
-      microk8s.kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null
-      echo 'complete -o default -F __start_kubectl k' >> /home/{{ user }}/.bashrc
+    - name: Add microk8s bash completion
+      shell: |
+        microk8s.kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null
+        echo 'complete -o default -F __start_kubectl k' >> /home/{{ user }}/.bashrc
 
-  - name: Add user to group
-    user:
-      name: "{{ user }}"
-      groups: microk8s
-      append: yes
+    - name: Add user to group
+      user:
+        name: "{{ user }}"
+        groups: microk8s
+        append: yes
 
-  - name: Add microk8s kubectl alias
-    lineinfile:
-      path: /home/{{ user }}/.bashrc
-      state: present
-      owner: "{{ user }}"
-      line: "{{ item }}"
-      regexp: "{{ item }}"
-      insertafter: EOF
-      create: true
-    loop:
-      - alias k='microk8s kubectl'
-      - alias kubectl='microk8s kubectl'
-      - alias helm='microk8s helm3'
+    - name: Add microk8s kubectl alias
+      lineinfile:
+        path: /home/{{ user }}/.bashrc
+        state: present
+        owner: "{{ user }}"
+        line: "{{ item }}"
+        regexp: "{{ item }}"
+        insertafter: EOF
+        create: true
+      loop:
+        - alias k='microk8s kubectl'
+        - alias kubectl='microk8s kubectl'
+        - alias helm='microk8s helm3'
 
-  - name: Create microk8s config dir
-    file:
-      path: /home/{{ user }}/.kube
-      state: directory
-      owner: "{{ user }}"
-      group: "{{ user }}"
+    - name: Create microk8s config dir
+      file:
+        path: /home/{{ user }}/.kube
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
 
-  - name: Get cluster config
-    shell: |
-      microk8s.config > /home/{{ user }}/.kube/config
-      chown {{ user }}:{{ user }} /home/{{ user }}/.kube/config
-      chmod 0644 /home/{{ user }}/.kube/config
+    - name: Get cluster config
+      shell: |
+        microk8s.config > /home/{{ user }}/.kube/config
+        chown {{ user }}:{{ user }} /home/{{ user }}/.kube/config
+        chmod 0644 /home/{{ user }}/.kube/config
 
-  - name: Restart docker service
-    systemd:
-      name: docker
-      daemon_reload: true
-      state: restarted
-    when: container_engine == 'docker'
+    - name: Restart docker service
+      systemd:
+        name: docker
+        daemon_reload: true
+        state: restarted
+      when: container_engine == 'docker'
 
-  - name : Install skaffold
-    shell: |
-      curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v2.9.0/skaffold-linux-amd64
-      install skaffold /usr/local/bin/
-    args:
-      chdir: /root/.ansible
+    - name: Install skaffold
+      shell: |
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v2.9.0/skaffold-linux-amd64
+        install skaffold /usr/local/bin/
+      args:
+        chdir: /root/.ansible

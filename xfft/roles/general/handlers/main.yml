@@ -9,5 +9,4 @@
     src: ../../../..
     dest: /home/{{ user }}
     rsync_opts:
-    - "--chown={{ user }}:{{ user }}"
-
+      - "--chown={{ user }}:{{ user }}"

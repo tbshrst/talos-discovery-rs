@@ -1,61 +1,61 @@
 - name: Install podman
   block:
-  - name: Add podman alternative repo source
-    shell: |
-      echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_22.04/ /' | \
-        sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:unstable.list
-      curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_22.04/Release.key | \
-        gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/devel_kubic_libcontainers_unstable.gpg > /dev/null
+    - name: Add podman alternative repo source
+      shell: |
+        echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/unstable/xUbuntu_22.04/ /' | \
+          sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:unstable.list
+        curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:unstable/xUbuntu_22.04/Release.key | \
+          gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/devel_kubic_libcontainers_unstable.gpg > /dev/null
 
-  - name: Install packages
-    apt:
-      state: latest
-      update_cache: true
-      name:
-        - podman
-        - podman-docker
-        - uidmap
+    - name: Install packages
+      apt:
+        state: latest
+        update_cache: true
+        name:
+          - podman
+          - podman-docker
+          - uidmap
 
-  - name: Systemd linger user
-    shell: |
-      loginctl enable-linger {{ user }}
+    - name: Systemd linger user
+      shell: |
+        loginctl enable-linger {{ user }}
 
-  - name: Activate podman user socket
-    become_user: "{{ user }}"
-    systemd_service:
-      name: podman.socket
-      scope: user
-      state: started
-      enabled: true
-      daemon_reload: true
+    - name: Activate podman user socket
+      become_user: "{{ user }}"
+      systemd_service:
+        name: podman.socket
+        scope: user
+        state: started
+        enabled: true
+        daemon_reload: true
 
-  - name: Add registry to podman
-    shell: |
-      cat > /etc/containers/registries.conf.d/dockerhub.conf <<EOF
-      [[registry]]
-      location = "docker.io"
-      insecure = false
-      EOF
+    - name: Add registry to podman
+      shell: |
+        cat > /etc/containers/registries.conf.d/dockerhub.conf <<EOF
+        [[registry]]
+        location = "docker.io"
+        insecure = false
+        EOF
 
-      cat > /etc/containers/registries.conf.d/gitlab_genua.conf <<EOF
-      [[registry]]
-      location = "gitlab.genua.de:5005"
-      insecure = true
-      EOF
+        cat > /etc/containers/registries.conf.d/gitlab_genua.conf <<EOF
+        [[registry]]
+        location = "gitlab.genua.de:5005"
+        insecure = true
+        EOF
 
-  - name: Add docker alias for podman
-    lineinfile:
-      path: /home/{{ user }}/.bashrc
-      state: present
-      owner: "{{ user }}"
-      line: "{{ item }}"
-      regexp: "{{ item }}"
-      insertafter: EOF
-      create: true
-    loop:
-      - alias docker='podman'
+    - name: Add docker alias for podman
+      lineinfile:
+        path: /home/{{ user }}/.bashrc
+        state: present
+        owner: "{{ user }}"
+        line: "{{ item }}"
+        regexp: "{{ item }}"
+        insertafter: EOF
+        create: true
+      loop:
+        - alias docker='podman'
 
-  - name: Run Talos Linux discovery service
-    become_user: "{{ user }}"
-    shell: |
-      podman run -d --restart always -p 3000:3000 ghcr.io/siderolabs/discovery-service:v1.0.9
+    - name: Run Talos Linux discovery service
+      become_user: "{{ user }}"
+      shell: |
+        podman run -d --restart always -p 3000:3000 ghcr.io/siderolabs/discovery-service:v1.0.9
