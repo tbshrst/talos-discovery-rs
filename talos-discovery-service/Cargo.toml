@@ -4,3 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+prost = { version = "0.13.5" }
+prost-types = { version = "0.13.5" }
+tokio = { version = "1.45.1", features = ["rt-multi-thread"] }
+tokio-stream = "0.1.17"
+tonic = { version = "0.13.1", features = ["server"] }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+
+[build-dependencies]
+tonic-build = "0.13.1"

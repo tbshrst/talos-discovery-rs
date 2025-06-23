@@ -66,6 +66,12 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -vy && 
     . ~/.bashrc && \
     cargo install cargo-make
 
+ARG PROTOC_VERSION=3.15.6
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
+    sudo -E unzip -d /usr/local protoc-${PROTOC_VERSION}-linux-x86_64.zip 'include/*' 'bin/*' && \
+    rm protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
+    sudo -E chmod -R 755 /usr/local/include/google /usr/local/bin/protoc
+
 RUN rm -r /tmp/*
 
 ENV no_proxy=openstack.genua.de
