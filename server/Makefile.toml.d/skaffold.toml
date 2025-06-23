@@ -1,0 +1,7 @@
+[tasks.skaffold-run]
+dependencies = ["podman-socket"]
+workspace = false
+script = '''
+  cd ${CARGO_MAKE_WORKING_DIRECTORY}
+  skaffold run -f skaffold.yaml --tail=false
+'''

@@ -1,0 +1,23 @@
+[tasks.docker-build-rust-template]
+workspace = true
+command = "${CONTAINER_CMD}"
+args = [
+  "build",
+  "--progress",
+  "plain",
+  "-t",
+  "${IMAGE}",
+  "${DOCKER_BUILD_CONTEXT}",
+  "-f",
+  "${DOCKERFILE}"
+]
+
+[tasks.docker-build-rust-debug]
+run_task = "docker-build-rust-template"
+[tasks.docker-build-rust-debug.env]
+DOCKER_BUILD_CONTEXT = "${RUST_BUILD_DEBUG_DIR}"
+
+[tasks.docker-push-rust]
+workspace = true
+command = "${CONTAINER_CMD}"
+args = ["push", "${IMAGE}"]

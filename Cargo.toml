@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+
+members = [ 
+  "client",
+  "server",
+]
+
+[workspace.dependencies]
+anyhow = { version = "1.0", default-features = false }
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+clap = { version = "4.5", default-features = false, features = ["env", "derive", "std"] }
+discovery-api = { path = "api" }
+prost = { version = "0.13", default-features = false }
+prost-types = { version = "0.13", default-features = false }
+serde = { version = "1.0", features = ["serde_derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["std"] }
+sha256 = { version = "1.6", default-features = false }
+tokio = { version = "1.45", default-features = false, features = ["fs", "rt-multi-thread"] }
+tokio-stream = { version = "0.1", default-features = false }
+tonic = { version = "0.13", default-features = false, features = ["channel", "codegen", "prost", "router", "server"] }
+tracing = { version = "0.1", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["ansi", "env-filter", "fmt"] }

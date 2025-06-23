@@ -1,0 +1,10 @@
+image:
+  repository: localhost:32000/discovery/talos-discovery-service
+  pullPolicy: Always
+  tag: "latest"
+
+gc_interval: 60
+listen_port: 3000
+loglevel: talos_discovery_service=debug
+ingress: nginx
+ingress_route: /talosdiscovery
