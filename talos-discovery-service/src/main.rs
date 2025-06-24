@@ -1,6 +1,6 @@
-use std::{collections::HashMap, net::IpAddr, sync::Arc};
+use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration};
 
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex, time};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 use tracing::{debug, error, info};
@@ -37,8 +37,10 @@ async fn main() {
 
 type ClusterId = String;
 
+#[derive(Clone)]
 pub struct DiscoveryService {
     clusters: Arc<Mutex<HashMap<ClusterId, TalosCluster>>>,
+    gc_interval: Duration,
 }
 
 struct TalosCluster {
@@ -50,9 +52,33 @@ struct Affilliates {}
 
 impl DiscoveryService {
     async fn new() -> Self {
-        Self {
+        let new = Self {
             clusters: Arc::new(Mutex::new(HashMap::new())),
-        }
+            gc_interval: Duration::from_secs(60),
+        };
+
+        new.run_gc_loop().await;
+
+        new
+    }
+
+    async fn run_gc_loop(&self) {
+        let self_clone = self.clone();
+
+        tokio::task::spawn(async move {
+            let mut gc_interval = time::interval(self_clone.gc_interval);
+
+            info!("garbage collector started");
+            loop {
+                gc_interval.tick().await;
+                self_clone.run_gc().await;
+            }
+        });
+    }
+
+    async fn run_gc(&self) {
+        debug!("run_gc");
+        let mut _clusters = self.clusters.lock().await;
     }
 }
 
