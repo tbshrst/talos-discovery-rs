@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration};
+use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration, time::SystemTime};
 
 use tokio::{sync::Mutex, time};
 use tokio_stream::wrappers::ReceiverStream;
@@ -36,6 +36,7 @@ async fn main() {
 }
 
 type ClusterId = String;
+type AffiliateId = String;
 
 #[derive(Clone)]
 pub struct DiscoveryService {
@@ -48,7 +49,10 @@ struct TalosCluster {
     _affiliates: Vec<Affilliates>,
 }
 
-struct Affilliates {}
+struct Affilliates {
+    _id: AffiliateId,
+    _expiration: SystemTime,
+}
 
 impl DiscoveryService {
     async fn new() -> Self {
