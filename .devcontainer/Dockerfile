@@ -72,6 +72,11 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC
     rm protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
     sudo -E chmod -R 755 /usr/local/include/google /usr/local/bin/protoc
 
+RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz && \
+    /usr/local/go/bin/go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+ENV PATH=$PATH:/usr/local/go/bin:/root/go/bin
+
 RUN rm -r /tmp/*
 
 ENV no_proxy=openstack.genua.de
