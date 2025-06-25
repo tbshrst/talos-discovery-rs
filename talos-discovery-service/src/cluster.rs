@@ -1,26 +1,31 @@
-use std::{fmt, time::SystemTime};
-
 use chrono::{DateTime, Utc};
+use std::{
+    collections::HashMap,
+    fmt,
+    num::TryFromIntError,
+    time::{Duration, SystemTime},
+};
 use tokio::sync::{
-    broadcast,
+    broadcast::Sender,
     mpsc::{self, Receiver},
 };
-use tonic::Status;
+
+use tonic::{Response, Status};
 use tracing::error;
 
-use crate::discovery::{self, WatchResponse};
+use crate::discovery::{self, AffiliateUpdateRequest, AffiliateUpdateResponse, WatchResponse};
 
 pub(crate) type ClusterId = String;
 type AffiliateId = String;
 
 pub(crate) struct TalosCluster {
     id: ClusterId,
-    affiliates: Vec<Affiliate>,
+    affiliates: HashMap<AffiliateId, Affiliate>,
     watch_broadcaster: tokio::sync::broadcast::Sender<WatchResponse>,
 }
 
 #[derive(Clone)]
-struct Affiliate {
+pub(crate) struct Affiliate {
     id: AffiliateId, // part of 'message Affiliate'
     expiration: SystemTime,
     data: Vec<u8>,           // part of 'message Affiliate'
@@ -38,16 +43,13 @@ impl From<Affiliate> for discovery::Affiliate {
 }
 
 impl TalosCluster {
-    pub async fn _new(cluster_id: ClusterId) -> Self {
-        let (tx, _) = broadcast::channel(128);
-
-        Self {
+    pub fn new(cluster_id: ClusterId) -> TalosCluster {
+        TalosCluster {
             id: cluster_id,
-            affiliates: vec![],
-            watch_broadcaster: tx,
+            affiliates: HashMap::new(),
+            watch_broadcaster: Sender::new(16),
         }
     }
-
     pub async fn subscribe(&self) -> Receiver<Result<WatchResponse, Status>> {
         let mut rx = self.watch_broadcaster.subscribe();
         let (tx, rx_stream) = mpsc::channel(128);
@@ -70,20 +72,39 @@ impl TalosCluster {
         rx_stream
     }
 
-    pub async fn _broadcast_affiliate_states(&self) {
-        let snapshot = self.get_affiliates().await;
-
-        let _ = self
-            .watch_broadcaster
-            .send(snapshot)
-            .inspect_err(|err| error!("{}", err));
+    pub fn add_affiliate(
+        &mut self,
+        request: &AffiliateUpdateRequest,
+    ) -> Result<Response<AffiliateUpdateResponse>, Status> {
+        let ttl = request
+            .ttl
+            .ok_or(Status::invalid_argument("Invalid TTL"))
+            .inspect_err(|err| error!("{}", err.to_string()))?;
+        let ttl = Duration::new(
+            ttl.seconds
+                .try_into()
+                .map_err(|err: TryFromIntError| Status::invalid_argument(err.to_string()))
+                .inspect_err(|err| error!("{}", err.to_string()))?,
+            ttl.nanos
+                .try_into()
+                .map_err(|err: TryFromIntError| Status::invalid_argument(err.to_string()))
+                .inspect_err(|err| error!("{}", err.to_string()))?,
+        );
+        let affiliate = Affiliate {
+            id: request.affiliate_id.clone(),
+            expiration: SystemTime::now() + ttl,
+            endpoints: request.affiliate_endpoints.clone(),
+            data: request.affiliate_data().to_vec(),
+        };
+        self.affiliates.insert(affiliate.id.clone(), affiliate);
+        Ok(Response::new(AffiliateUpdateResponse {}))
     }
 
     async fn get_affiliates(&self) -> WatchResponse {
         let affiliates = self
             .affiliates
             .clone()
-            .into_iter()
+            .into_values()
             .map(Affiliate::into)
             .collect::<Vec<discovery::Affiliate>>();
 
@@ -98,7 +119,7 @@ impl fmt::Display for TalosCluster {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let _ = write!(f, "Cluster: {}", self.id);
 
-        for affiliate in &self.affiliates {
+        for (_, affiliate) in &self.affiliates {
             let _ = write!(f, "\taffiliate id: {}", affiliate.id);
 
             let _ = write!(
