@@ -3,7 +3,7 @@ use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration};
 use tokio::{sync::Mutex, time};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     cluster::{ClusterId, TalosCluster},
@@ -45,7 +45,7 @@ impl DiscoveryService {
         tokio::task::spawn(async move {
             let mut gc_interval = time::interval(self_clone.gc_interval);
 
-            info!("garbage collector started");
+            info!("Garbage collector started");
             loop {
                 gc_interval.tick().await;
                 self_clone.run_gc().await;
@@ -79,13 +79,12 @@ impl Cluster for DiscoveryService {
     type WatchStream = ReceiverStream<Result<WatchResponse, Status>>;
 
     async fn hello(&self, request: Request<HelloRequest>) -> Result<Response<HelloResponse>, Status> {
-        info!("cluster node request: Hello ({})", request.remote_addr().unwrap().ip());
-        debug!("{:?}", request);
+        info!("Cluster node request: Hello ({})", request.remote_addr().unwrap().ip());
 
         let socket = request
             .remote_addr()
-            .ok_or(Status::invalid_argument("couldn't parse IP address"))
-            .inspect_err(|err| error!("{}", err.to_string()))?;
+            .ok_or(Status::invalid_argument("Couldn't parse IP address"))
+            .inspect_err(|err| debug!("{}", err.to_string()))?;
 
         let ip = match socket.ip() {
             IpAddr::V4(ipv4) => ipv4.octets().to_vec(),
@@ -99,8 +98,7 @@ impl Cluster for DiscoveryService {
     }
 
     async fn watch(&self, request: Request<WatchRequest>) -> Result<Response<Self::WatchStream>, Status> {
-        info!("cluster node request: Watch ({})", request.remote_addr().unwrap().ip());
-        debug!("{:?}", request);
+        info!("Cluster node request: Watch ({})", request.remote_addr().unwrap().ip());
 
         let request = request.into_inner();
         let cluster_id = request.cluster_id;
@@ -109,8 +107,8 @@ impl Cluster for DiscoveryService {
         let cluster = self
             .get_cluster(&mut clusters, cluster_id.clone())
             .await
-            .ok_or(Status::not_found(format!("cluster with ID {} not found", cluster_id)))
-            .inspect_err(|err| error!("{}", err.to_string()))?;
+            .ok_or(Status::not_found(format!("Cluster with ID {} not found", cluster_id)))
+            .inspect_err(|err| warn!("{}", err.message()))?;
 
         let watch_stream = cluster.subscribe().await;
 
@@ -122,10 +120,10 @@ impl Cluster for DiscoveryService {
         request: Request<AffiliateUpdateRequest>,
     ) -> std::result::Result<Response<AffiliateUpdateResponse>, Status> {
         info!(
-            "cluster node request: AffiliateUpdate ({})",
+            "Cluster node request: AffiliateUpdate ({})",
             request.remote_addr().unwrap().ip()
         );
-        debug!("{:?}", request);
+
         let mut clusters = self.clusters.lock().await;
         let request = request.into_inner();
 
@@ -145,10 +143,9 @@ impl Cluster for DiscoveryService {
         request: Request<AffiliateDeleteRequest>,
     ) -> Result<Response<AffiliateDeleteResponse>, Status> {
         info!(
-            "cluster node request: AffilliateDelete ({})",
+            "Cluster node request: AffilliateDelete ({})",
             request.remote_addr().unwrap().ip()
         );
-        debug!("{:?}", request);
 
         let request = request.into_inner();
         let cluster_id = request.cluster_id;
@@ -158,7 +155,7 @@ impl Cluster for DiscoveryService {
         let cluster = self
             .get_cluster(&mut clusters, cluster_id.clone())
             .await
-            .ok_or(Status::not_found(format!("cluster with ID {} not found", cluster_id)))
+            .ok_or(Status::not_found(format!("Cluster ID {} not found", cluster_id)))
             .inspect_err(|err| error!("{}", err.to_string()))?;
 
         match cluster.get_affiliate(&affiliate_id).await {
@@ -166,17 +163,17 @@ impl Cluster for DiscoveryService {
                 cluster.delete_affiliate(&affiliate_id).await;
                 cluster.broadcast_affiliate_states().await;
 
-                info!("deleted affiliate {} from cluster {}", affiliate_id, cluster_id);
+                info!("Deleted affiliate {} from cluster {}", affiliate_id, cluster_id);
             }
-            None => debug!("affiliate {} doesn't exist in cluster {}", affiliate_id, cluster_id),
+            None => debug!("Affiliate {} doesn't exist in cluster {}", affiliate_id, cluster_id),
         }
 
         Ok(Response::new(AffiliateDeleteResponse {}))
     }
 
     async fn list(&self, request: Request<ListRequest>) -> Result<Response<ListResponse>, Status> {
-        info!("cluster node request: List ({})", request.remote_addr().unwrap().ip());
-        debug!("{:?}", request);
+        info!("Cluster node request: List ({})", request.remote_addr().unwrap().ip());
+
         let mut _clusters = self.clusters.lock().await;
         unimplemented!();
     }

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 use std::{
     collections::HashMap,
     fmt,
@@ -9,9 +9,8 @@ use tokio::sync::{
     broadcast::Sender,
     mpsc::{self, Receiver},
 };
-
 use tonic::{Response, Status};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use crate::discovery::{self, AffiliateUpdateRequest, AffiliateUpdateResponse, WatchResponse};
 
@@ -21,15 +20,18 @@ type AffiliateId = String;
 pub(crate) struct TalosCluster {
     id: ClusterId,
     affiliates: HashMap<AffiliateId, Affiliate>,
-    watch_broadcaster: tokio::sync::broadcast::Sender<WatchResponse>,
+    watch_broadcaster: Sender<WatchResponse>,
 }
 
 #[derive(Clone)]
 pub(crate) struct Affiliate {
-    id: AffiliateId, // part of 'message Affiliate'
+    // part of gRPC message Affiliate
+    id: AffiliateId,
+    // part of gRPC message Affiliate
+    data: Vec<u8>,
+    // part of gRPC message Affiliate
+    endpoints: Vec<Vec<u8>>,
     expiration: SystemTime,
-    data: Vec<u8>,           // part of 'message Affiliate'
-    endpoints: Vec<Vec<u8>>, // part of 'message Affiliate'
 }
 
 impl From<Affiliate> for discovery::Affiliate {
@@ -50,23 +52,37 @@ impl TalosCluster {
             watch_broadcaster: Sender::new(16),
         }
     }
+
     pub async fn subscribe(&self) -> Receiver<Result<WatchResponse, Status>> {
         let mut rx = self.watch_broadcaster.subscribe();
         let (tx, rx_stream) = mpsc::channel(128);
 
-        let snapshot: WatchResponse = self.get_affiliates().await;
+        let snapshot = self.get_affiliates().await;
         let _ = tx.send(Ok(snapshot)).await.inspect_err(|err| error!("{}", err));
 
         tokio::spawn(async move {
             while let Ok(msg) = rx.recv().await {
                 if let Err(err) = tx.send(Ok(msg)).await {
-                    error!("{}", err);
+                    debug!("{}", err);
                     break;
                 }
             }
         });
 
         rx_stream
+    }
+
+    pub async fn broadcast_affiliate_states(&self) {
+        if self.watch_broadcaster.receiver_count() == 0 {
+            return;
+        }
+
+        let affiliate_states = self.get_affiliates().await;
+
+        let _ = self
+            .watch_broadcaster
+            .send(affiliate_states)
+            .inspect_err(|err| error!("{}", err));
     }
 
     pub async fn add_affiliate(
@@ -77,6 +93,7 @@ impl TalosCluster {
             .ttl
             .ok_or(Status::invalid_argument("Invalid TTL"))
             .inspect_err(|err| error!("{}", err.to_string()))?;
+
         let ttl = Duration::new(
             ttl.seconds
                 .try_into()
@@ -87,35 +104,21 @@ impl TalosCluster {
                 .map_err(|err: TryFromIntError| Status::invalid_argument(err.to_string()))
                 .inspect_err(|err| error!("{}", err.to_string()))?,
         );
+
         let affiliate = Affiliate {
             id: request.affiliate_id.clone(),
             expiration: SystemTime::now() + ttl,
             endpoints: request.affiliate_endpoints.clone(),
             data: request.affiliate_data().to_vec(),
         };
-        let affiliate_id = affiliate.id.clone();
+
         self.affiliates.insert(affiliate.id.clone(), affiliate);
-        info!(
-            "Added affiliate: {}\nNumber of affiliates: {}",
-            affiliate_id,
-            self.affiliates.len()
-        );
+        info!("Added affiliate: {}", request.affiliate_id,);
+        info!("Number of affiliates: {}", self.affiliates.len());
 
         self.broadcast_affiliate_states().await;
+
         Ok(Response::new(AffiliateUpdateResponse {}))
-    }
-
-    pub async fn broadcast_affiliate_states(&self) {
-        if self.watch_broadcaster.receiver_count() == 0 {
-            return;
-        }
-
-        let snapshot = self.get_affiliates().await;
-
-        let _ = self
-            .watch_broadcaster
-            .send(snapshot)
-            .inspect_err(|err| error!("{}", err));
     }
 
     async fn get_affiliates(&self) -> WatchResponse {
@@ -144,6 +147,7 @@ impl TalosCluster {
         let before_len = self.affiliates.len();
         self.affiliates
             .retain(|_, affiliate| SystemTime::now() < affiliate.expiration);
+
         info!(
             "GC for cluster {}: Removed {} affiliates. Remaining: {}",
             self.id,
@@ -159,42 +163,52 @@ impl TalosCluster {
 
 impl fmt::Display for TalosCluster {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let _ = write!(f, "Cluster: {}", self.id);
+        let _ = write!(f, "{{ Cluster: {}", self.id);
 
         for affiliate in self.affiliates.values() {
-            let _ = write!(f, "\taffiliate id: {}", affiliate.id);
+            let _ = write!(f, ", Affiliate id: {}", affiliate.id);
 
             let _ = write!(
                 f,
-                "\t\texpiration id: {}",
-                DateTime::<Utc>::from(affiliate.expiration).to_rfc3339()
+                ", Expiration: {}",
+                DateTime::<Utc>::from(affiliate.expiration).with_nanosecond(0).unwrap()
             );
 
             let encrypted_data = {
                 let mut data = &affiliate.data[..];
 
-                if data.len() > 64 {
-                    data = &data[..64];
+                if data.len() > 4 {
+                    data = &data[..4];
                 }
 
-                format!("{}..", str::from_utf8(data).unwrap())
+                format!(
+                    "{}..",
+                    data.iter().map(|b| format!("{:02x}", b)).collect::<Vec<_>>().join("")
+                )
             };
-            let _ = write!(f, "\t\tencrypted data: {}", encrypted_data);
+            let _ = write!(f, ", Encrypted data: {}", encrypted_data);
 
             for endpoint in &affiliate.endpoints {
                 let encrypted_endpoint = {
                     let mut endpoints = &endpoint[..];
 
-                    if endpoints.len() > 64 {
-                        endpoints = &endpoints[..64];
+                    if endpoints.len() > 4 {
+                        endpoints = &endpoints[..4];
                     }
 
-                    format!("{}..", str::from_utf8(endpoints).unwrap())
+                    format!(
+                        "{}..",
+                        endpoints
+                            .iter()
+                            .map(|b| format!("{:02x}", b))
+                            .collect::<Vec<_>>()
+                            .join("")
+                    )
                 };
-                let _ = write!(f, "\t\tencrypted endpoitn: {}", encrypted_endpoint);
+                let _ = write!(f, ", Encrypted Endpoint: {}", encrypted_endpoint);
             }
         }
 
-        write!(f, "")
+        write!(f, "}}")
     }
 }
