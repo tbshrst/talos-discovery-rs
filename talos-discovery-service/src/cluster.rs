@@ -9,7 +9,7 @@ use tokio::sync::{
     mpsc::{self, Receiver},
 };
 use tonic::{Response, Status};
-use tracing::error;
+use tracing::{error, info};
 
 use crate::discovery::{self, AffiliateUpdateRequest, AffiliateUpdateResponse, WatchResponse};
 
@@ -70,7 +70,7 @@ impl TalosCluster {
         rx_stream
     }
 
-    pub fn add_affiliate(
+    pub async fn add_affiliate(
         &mut self,
         request: &AffiliateUpdateRequest,
     ) -> Result<Response<AffiliateUpdateResponse>, Status> {
@@ -94,7 +94,15 @@ impl TalosCluster {
             endpoints: request.affiliate_endpoints.clone(),
             data: request.affiliate_data().to_vec(),
         };
+        let affiliate_id = affiliate.id.clone();
         self.affiliates.insert(affiliate.id.clone(), affiliate);
+        info!(
+            "Added affiliate: {}\nNumber of affiliates: {}",
+            affiliate_id,
+            self.affiliates.len()
+        );
+
+        self.broadcast_cluster_snapshot().await;
         Ok(Response::new(AffiliateUpdateResponse {}))
     }
 
@@ -112,7 +120,7 @@ impl TalosCluster {
         }
     }
 
-    pub async fn _broadcast_cluster_snapshot(&self) {
+    pub async fn broadcast_cluster_snapshot(&self) {
         let snapshot = self.get_affiliate_snapshot().await;
 
         let _ = self
