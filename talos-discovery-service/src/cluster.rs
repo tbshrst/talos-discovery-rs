@@ -73,16 +73,8 @@ impl TalosCluster {
     }
 
     pub async fn broadcast_affiliate_states(&self) {
-        if self.watch_broadcaster.receiver_count() == 0 {
-            return;
-        }
-
         let affiliate_states = self.get_affiliates().await;
-
-        let _ = self
-            .watch_broadcaster
-            .send(affiliate_states)
-            .inspect_err(|err| error!("{}", err));
+        self.send_affiliate_update(affiliate_states).await;
     }
 
     pub async fn add_affiliate(
@@ -135,6 +127,16 @@ impl TalosCluster {
         }
     }
 
+    async fn send_affiliate_update(&self, response: WatchResponse) {
+        if self.watch_broadcaster.receiver_count() == 0 {
+            return;
+        }
+        let _ = self
+            .watch_broadcaster
+            .send(response)
+            .inspect_err(|err| error!("{}", err));
+    }
+
     pub async fn get_affiliate(&self, affiliate_id: &AffiliateId) -> Option<&Affiliate> {
         self.affiliates.get(affiliate_id)
     }
@@ -143,21 +145,46 @@ impl TalosCluster {
         self.affiliates.remove(affiliate_id)
     }
 
-    pub fn run_gc(&mut self) {
-        let before_len = self.affiliates.len();
-        self.affiliates
-            .retain(|_, affiliate| SystemTime::now() < affiliate.expiration);
+    pub async fn run_gc(&mut self) {
+        let expired = self
+            .affiliates
+            .clone()
+            .into_iter()
+            .filter(|(_, a)| SystemTime::now() > a.expiration)
+            .collect::<HashMap<_, _>>();
 
+        expired.clone().into_keys().for_each(|k| {
+            self.affiliates.remove(&k);
+        });
         info!(
             "GC for cluster {}: Removed {} affiliates. Remaining: {}",
             self.id,
-            before_len - self.affiliates.len(),
+            expired.len(),
             self.affiliates.len()
         );
+
+        self.broadcast_deleted_affiliates(expired).await;
     }
 
     pub fn is_empty(&self) -> bool {
         self.affiliates.is_empty()
+    }
+
+    async fn broadcast_deleted_affiliates(&self, expired: HashMap<AffiliateId, Affiliate>) {
+        if expired.is_empty() {
+            return;
+        }
+        let deleted_affiliates = expired
+            .into_values()
+            .map(Affiliate::into)
+            .collect::<Vec<discovery::Affiliate>>();
+
+        let response = WatchResponse {
+            affiliates: deleted_affiliates,
+            deleted: true,
+        };
+
+        self.send_affiliate_update(response).await;
     }
 }
 

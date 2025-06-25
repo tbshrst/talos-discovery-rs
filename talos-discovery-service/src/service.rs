@@ -57,7 +57,9 @@ impl DiscoveryService {
         debug!("run_gc");
 
         let mut clusters = self.clusters.lock().await;
-        clusters.values_mut().for_each(|cluster| cluster.run_gc());
+        for cluster in clusters.values_mut() {
+            cluster.run_gc().await;
+        }
 
         let before_len = clusters.len();
         clusters.retain(|_, cluster| !cluster.is_empty());
