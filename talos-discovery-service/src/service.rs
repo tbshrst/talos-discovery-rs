@@ -21,10 +21,10 @@ pub(crate) struct DiscoveryService {
 }
 
 impl DiscoveryService {
-    pub async fn new() -> Self {
+    pub async fn new(gc_interval: u16) -> Self {
         let new = Self {
             clusters: Arc::new(Mutex::new(HashMap::new())),
-            gc_interval: Duration::from_secs(60),
+            gc_interval: Duration::from_secs(gc_interval.into()),
         };
 
         new.run_gc_loop().await;
@@ -48,7 +48,11 @@ impl DiscoveryService {
 
     async fn run_gc(&self) {
         debug!("run_gc");
-        let mut _clusters = self.clusters.lock().await;
+        let clusters = self.clusters.lock().await;
+
+        clusters
+            .iter()
+            .for_each(|(_, cluster)| debug!("{}", cluster.to_string()));
     }
 }
 
@@ -104,7 +108,7 @@ impl Cluster for DiscoveryService {
             )))
             .inspect_err(|err| error!("{}", err.to_string()))?;
 
-        let watch_stream = cluster.new_cluster_watcher().await;
+        let watch_stream = cluster.subscribe().await;
 
         Ok(Response::new(ReceiverStream::new(watch_stream)))
     }
