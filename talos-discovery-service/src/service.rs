@@ -125,11 +125,11 @@ impl Cluster for DiscoveryService {
         let mut clusters = self.clusters.lock().await;
         let request = request.into_inner();
 
-        if let Some(cluster) = clusters.get_mut(&request.affiliate_id) {
-            return cluster.add_affiliate(&request);
+        if let Some(cluster) = clusters.get_mut(&request.cluster_id) {
+            return cluster.add_affiliate(&request).await;
         }
         let mut cluster = TalosCluster::new(request.cluster_id.clone());
-        let res = cluster.add_affiliate(&request);
+        let res = cluster.add_affiliate(&request).await;
         clusters.insert(request.cluster_id.clone(), cluster);
 
         res

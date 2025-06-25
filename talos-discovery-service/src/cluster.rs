@@ -11,7 +11,7 @@ use tokio::sync::{
 };
 
 use tonic::{Response, Status};
-use tracing::error;
+use tracing::{error, info};
 
 use crate::discovery::{self, AffiliateUpdateRequest, AffiliateUpdateResponse, WatchResponse};
 
@@ -72,7 +72,7 @@ impl TalosCluster {
         rx_stream
     }
 
-    pub fn add_affiliate(
+    pub async fn add_affiliate(
         &mut self,
         request: &AffiliateUpdateRequest,
     ) -> Result<Response<AffiliateUpdateResponse>, Status> {
@@ -96,8 +96,25 @@ impl TalosCluster {
             endpoints: request.affiliate_endpoints.clone(),
             data: request.affiliate_data().to_vec(),
         };
+        let affiliate_id = affiliate.id.clone();
         self.affiliates.insert(affiliate.id.clone(), affiliate);
+        info!(
+            "Added affiliate: {}\nNumber of affiliates: {}",
+            affiliate_id,
+            self.affiliates.len()
+        );
+
+        self.broadcast_affiliate_states().await;
         Ok(Response::new(AffiliateUpdateResponse {}))
+    }
+
+    pub async fn broadcast_affiliate_states(&self) {
+        let snapshot = self.get_affiliates().await;
+
+        let _ = self
+            .watch_broadcaster
+            .send(snapshot)
+            .inspect_err(|err| error!("{}", err));
     }
 
     async fn get_affiliates(&self) -> WatchResponse {
@@ -119,7 +136,7 @@ impl fmt::Display for TalosCluster {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let _ = write!(f, "Cluster: {}", self.id);
 
-        for (_, affiliate) in &self.affiliates {
+        for affiliate in self.affiliates.values() {
             let _ = write!(f, "\taffiliate id: {}", affiliate.id);
 
             let _ = write!(
