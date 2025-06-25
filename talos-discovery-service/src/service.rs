@@ -32,6 +32,14 @@ impl DiscoveryService {
         new
     }
 
+    async fn get_cluster<'a>(
+        &self,
+        clusters: &'a mut HashMap<ClusterId, TalosCluster>,
+        cluster_id: ClusterId,
+    ) -> Option<&'a mut TalosCluster> {
+        clusters.get_mut(&cluster_id)
+    }
+
     async fn run_gc_loop(&self) {
         let self_clone = self.clone();
 
@@ -108,11 +116,12 @@ impl Cluster for DiscoveryService {
         debug!("{:?}", request);
 
         let request = request.into_inner();
-
-        let clusters = self.clusters.lock().await;
         let cluster_id = request.cluster_id;
-        let cluster = clusters
-            .get(&cluster_id)
+
+        let mut clusters = self.clusters.lock().await;
+        let cluster = self
+            .get_cluster(&mut clusters, cluster_id.clone())
+            .await
             .ok_or(Status::not_found(format!(
                 "cluster with ID {} not found",
                 cluster_id
@@ -159,8 +168,38 @@ impl Cluster for DiscoveryService {
             request.remote_addr().unwrap().ip()
         );
         debug!("{:?}", request);
-        let mut _clusters = self.clusters.lock().await;
-        unimplemented!();
+
+        let request = request.into_inner();
+        let cluster_id = request.cluster_id;
+        let affiliate_id = request.affiliate_id;
+
+        let mut clusters = self.clusters.lock().await;
+        let cluster = self
+            .get_cluster(&mut clusters, cluster_id.clone())
+            .await
+            .ok_or(Status::not_found(format!(
+                "cluster with ID {} not found",
+                cluster_id
+            )))
+            .inspect_err(|err| error!("{}", err.to_string()))?;
+
+        match cluster.get_affiliate(&affiliate_id).await {
+            Some(_) => {
+                cluster.delete_affiliate(&affiliate_id).await;
+                cluster.broadcast_affiliate_states().await;
+
+                info!(
+                    "deleted affiliate {} from cluster {}",
+                    affiliate_id, cluster_id
+                );
+            }
+            None => debug!(
+                "affiliate {} doesn't exist in cluster {}",
+                affiliate_id, cluster_id
+            ),
+        }
+
+        Ok(Response::new(AffiliateDeleteResponse {}))
     }
 
     async fn list(&self, request: Request<ListRequest>) -> Result<Response<ListResponse>, Status> {

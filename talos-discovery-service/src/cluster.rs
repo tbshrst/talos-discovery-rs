@@ -135,6 +135,14 @@ impl TalosCluster {
         }
     }
 
+    pub async fn get_affiliate(&self, affiliate_id: &AffiliateId) -> Option<&Affiliate> {
+        self.affiliates.get(affiliate_id)
+    }
+
+    pub async fn delete_affiliate(&mut self, affiliate_id: &AffiliateId) -> Option<Affiliate> {
+        self.affiliates.remove(affiliate_id)
+    }
+
     pub fn run_gc(&mut self) {
         let before_len = self.affiliates.len();
         self.affiliates
