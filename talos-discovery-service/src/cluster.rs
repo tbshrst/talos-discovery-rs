@@ -1,22 +1,29 @@
-use std::time::SystemTime;
+use std::{
+    collections::HashMap,
+    num::TryFromIntError,
+    time::{Duration, SystemTime},
+};
 
-use tokio::sync::mpsc::{self, Receiver};
-use tonic::Status;
+use tokio::sync::{
+    broadcast::Sender,
+    mpsc::{self, Receiver},
+};
+use tonic::{Response, Status};
 use tracing::error;
 
-use crate::discovery::{self, WatchResponse};
+use crate::discovery::{self, AffiliateUpdateRequest, AffiliateUpdateResponse, WatchResponse};
 
 pub(crate) type ClusterId = String;
 type AffiliateId = String;
 
 pub(crate) struct TalosCluster {
     _id: ClusterId,
-    affiliates: Vec<Affiliate>,
+    affiliates: HashMap<AffiliateId, Affiliate>,
     watch_broadcaster: tokio::sync::broadcast::Sender<WatchResponse>,
 }
 
 #[derive(Clone)]
-struct Affiliate {
+pub(crate) struct Affiliate {
     id: AffiliateId, // part of 'message Affiliate'
     _expiration: SystemTime,
     data: Vec<u8>,           // part of 'message Affiliate'
@@ -34,6 +41,13 @@ impl From<Affiliate> for discovery::Affiliate {
 }
 
 impl TalosCluster {
+    pub fn new(cluster_id: ClusterId) -> TalosCluster {
+        TalosCluster {
+            _id: cluster_id,
+            affiliates: HashMap::new(),
+            watch_broadcaster: Sender::new(16),
+        }
+    }
     pub async fn new_cluster_watcher(&self) -> Receiver<Result<WatchResponse, Status>> {
         let mut rx = self.watch_broadcaster.subscribe();
         let (tx, rx_stream) = mpsc::channel(128);
@@ -56,11 +70,39 @@ impl TalosCluster {
         rx_stream
     }
 
+    pub fn add_affiliate(
+        &mut self,
+        request: &AffiliateUpdateRequest,
+    ) -> Result<Response<AffiliateUpdateResponse>, Status> {
+        let ttl = request
+            .ttl
+            .ok_or(Status::invalid_argument("Invalid TTL"))
+            .inspect_err(|err| error!("{}", err.to_string()))?;
+        let ttl = Duration::new(
+            ttl.seconds
+                .try_into()
+                .map_err(|err: TryFromIntError| Status::invalid_argument(err.to_string()))
+                .inspect_err(|err| error!("{}", err.to_string()))?,
+            ttl.nanos
+                .try_into()
+                .map_err(|err: TryFromIntError| Status::invalid_argument(err.to_string()))
+                .inspect_err(|err| error!("{}", err.to_string()))?,
+        );
+        let affiliate = Affiliate {
+            id: request.affiliate_id.clone(),
+            _expiration: SystemTime::now() + ttl,
+            endpoints: request.affiliate_endpoints.clone(),
+            data: request.affiliate_data().to_vec(),
+        };
+        self.affiliates.insert(affiliate.id.clone(), affiliate);
+        Ok(Response::new(AffiliateUpdateResponse {}))
+    }
+
     async fn get_affiliate_snapshot(&self) -> WatchResponse {
         let affiliates = self
             .affiliates
             .clone()
-            .into_iter()
+            .into_values()
             .map(Affiliate::into)
             .collect::<Vec<discovery::Affiliate>>();
 

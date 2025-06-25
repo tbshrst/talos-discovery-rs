@@ -118,8 +118,17 @@ impl Cluster for DiscoveryService {
             request.remote_addr().unwrap().ip()
         );
         debug!("{:?}", request);
-        let mut _clusters = self.clusters.lock().await;
-        unimplemented!();
+        let mut clusters = self.clusters.lock().await;
+        let request = request.into_inner();
+
+        if let Some(cluster) = clusters.get_mut(&request.affiliate_id) {
+            return cluster.add_affiliate(&request);
+        }
+        let mut cluster = TalosCluster::new(request.cluster_id.clone());
+        let res = cluster.add_affiliate(&request);
+        clusters.insert(request.cluster_id.clone(), cluster);
+
+        res
     }
 
     async fn affiliate_delete(
