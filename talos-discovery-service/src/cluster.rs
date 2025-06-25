@@ -25,7 +25,7 @@ pub(crate) struct TalosCluster {
 #[derive(Clone)]
 pub(crate) struct Affiliate {
     id: AffiliateId, // part of 'message Affiliate'
-    _expiration: SystemTime,
+    expiration: SystemTime,
     data: Vec<u8>,           // part of 'message Affiliate'
     endpoints: Vec<Vec<u8>>, // part of 'message Affiliate'
 }
@@ -48,6 +48,7 @@ impl TalosCluster {
             watch_broadcaster: Sender::new(16),
         }
     }
+
     pub async fn new_cluster_watcher(&self) -> Receiver<Result<WatchResponse, Status>> {
         let mut rx = self.watch_broadcaster.subscribe();
         let (tx, rx_stream) = mpsc::channel(128);
@@ -90,7 +91,7 @@ impl TalosCluster {
         );
         let affiliate = Affiliate {
             id: request.affiliate_id.clone(),
-            _expiration: SystemTime::now() + ttl,
+            expiration: SystemTime::now() + ttl,
             endpoints: request.affiliate_endpoints.clone(),
             data: request.affiliate_data().to_vec(),
         };
@@ -127,5 +128,21 @@ impl TalosCluster {
             .watch_broadcaster
             .send(snapshot)
             .inspect_err(|err| error!("{}", err));
+    }
+
+    pub fn run_gc(&mut self) {
+        let before_len = self.affiliates.len();
+        self.affiliates
+            .retain(|_, affiliate| SystemTime::now() < affiliate.expiration);
+        info!(
+            "GC for cluster {}: Removed {} affiliates. Remaining: {}",
+            self._id,
+            before_len - self.affiliates.len(),
+            self.affiliates.len()
+        );
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.affiliates.is_empty()
     }
 }
