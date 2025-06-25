@@ -55,10 +55,7 @@ impl TalosCluster {
         let (tx, rx_stream) = mpsc::channel(128);
 
         let snapshot: WatchResponse = self.get_affiliates().await;
-        let _ = tx
-            .send(Ok(snapshot))
-            .await
-            .inspect_err(|err| error!("{}", err));
+        let _ = tx.send(Ok(snapshot)).await.inspect_err(|err| error!("{}", err));
 
         tokio::spawn(async move {
             while let Ok(msg) = rx.recv().await {

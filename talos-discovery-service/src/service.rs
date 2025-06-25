@@ -8,9 +8,8 @@ use tracing::{debug, error, info};
 use crate::{
     cluster::{ClusterId, TalosCluster},
     discovery::{
-        cluster_server::Cluster, AffiliateDeleteRequest, AffiliateDeleteResponse,
-        AffiliateUpdateRequest, AffiliateUpdateResponse, HelloRequest, HelloResponse, ListRequest,
-        ListResponse, WatchRequest, WatchResponse,
+        cluster_server::Cluster, AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest,
+        AffiliateUpdateResponse, HelloRequest, HelloResponse, ListRequest, ListResponse, WatchRequest, WatchResponse,
     },
 };
 
@@ -79,14 +78,8 @@ impl DiscoveryService {
 impl Cluster for DiscoveryService {
     type WatchStream = ReceiverStream<Result<WatchResponse, Status>>;
 
-    async fn hello(
-        &self,
-        request: Request<HelloRequest>,
-    ) -> Result<Response<HelloResponse>, Status> {
-        info!(
-            "cluster node request: Hello ({})",
-            request.remote_addr().unwrap().ip()
-        );
+    async fn hello(&self, request: Request<HelloRequest>) -> Result<Response<HelloResponse>, Status> {
+        info!("cluster node request: Hello ({})", request.remote_addr().unwrap().ip());
         debug!("{:?}", request);
 
         let socket = request
@@ -105,14 +98,8 @@ impl Cluster for DiscoveryService {
         }))
     }
 
-    async fn watch(
-        &self,
-        request: Request<WatchRequest>,
-    ) -> Result<Response<Self::WatchStream>, Status> {
-        info!(
-            "cluster node request: Watch ({})",
-            request.remote_addr().unwrap().ip()
-        );
+    async fn watch(&self, request: Request<WatchRequest>) -> Result<Response<Self::WatchStream>, Status> {
+        info!("cluster node request: Watch ({})", request.remote_addr().unwrap().ip());
         debug!("{:?}", request);
 
         let request = request.into_inner();
@@ -122,10 +109,7 @@ impl Cluster for DiscoveryService {
         let cluster = self
             .get_cluster(&mut clusters, cluster_id.clone())
             .await
-            .ok_or(Status::not_found(format!(
-                "cluster with ID {} not found",
-                cluster_id
-            )))
+            .ok_or(Status::not_found(format!("cluster with ID {} not found", cluster_id)))
             .inspect_err(|err| error!("{}", err.to_string()))?;
 
         let watch_stream = cluster.subscribe().await;
@@ -148,10 +132,7 @@ impl Cluster for DiscoveryService {
         if let Some(cluster) = clusters.get_mut(&request.cluster_id) {
             return cluster.add_affiliate(&request).await;
         }
-        info!(
-            "Creating new cluster with id {}",
-            request.cluster_id.clone()
-        );
+        info!("Creating new cluster with id {}", request.cluster_id.clone());
         let mut cluster = TalosCluster::new(request.cluster_id.clone());
         let res = cluster.add_affiliate(&request).await;
         clusters.insert(request.cluster_id.clone(), cluster);
@@ -177,10 +158,7 @@ impl Cluster for DiscoveryService {
         let cluster = self
             .get_cluster(&mut clusters, cluster_id.clone())
             .await
-            .ok_or(Status::not_found(format!(
-                "cluster with ID {} not found",
-                cluster_id
-            )))
+            .ok_or(Status::not_found(format!("cluster with ID {} not found", cluster_id)))
             .inspect_err(|err| error!("{}", err.to_string()))?;
 
         match cluster.get_affiliate(&affiliate_id).await {
@@ -188,25 +166,16 @@ impl Cluster for DiscoveryService {
                 cluster.delete_affiliate(&affiliate_id).await;
                 cluster.broadcast_affiliate_states().await;
 
-                info!(
-                    "deleted affiliate {} from cluster {}",
-                    affiliate_id, cluster_id
-                );
+                info!("deleted affiliate {} from cluster {}", affiliate_id, cluster_id);
             }
-            None => debug!(
-                "affiliate {} doesn't exist in cluster {}",
-                affiliate_id, cluster_id
-            ),
+            None => debug!("affiliate {} doesn't exist in cluster {}", affiliate_id, cluster_id),
         }
 
         Ok(Response::new(AffiliateDeleteResponse {}))
     }
 
     async fn list(&self, request: Request<ListRequest>) -> Result<Response<ListResponse>, Status> {
-        info!(
-            "cluster node request: List ({})",
-            request.remote_addr().unwrap().ip()
-        );
+        info!("cluster node request: List ({})", request.remote_addr().unwrap().ip());
         debug!("{:?}", request);
         let mut _clusters = self.clusters.lock().await;
         unimplemented!();
