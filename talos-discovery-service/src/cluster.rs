@@ -109,6 +109,10 @@ impl TalosCluster {
     }
 
     pub async fn broadcast_affiliate_states(&self) {
+        if self.watch_broadcaster.receiver_count() == 0 {
+            return;
+        }
+
         let snapshot = self.get_affiliates().await;
 
         let _ = self
