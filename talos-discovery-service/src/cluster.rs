@@ -130,6 +130,22 @@ impl TalosCluster {
             deleted: false,
         }
     }
+
+    pub fn run_gc(&mut self) {
+        let before_len = self.affiliates.len();
+        self.affiliates
+            .retain(|_, affiliate| SystemTime::now() < affiliate.expiration);
+        info!(
+            "GC for cluster {}: Removed {} affiliates. Remaining: {}",
+            self.id,
+            before_len - self.affiliates.len(),
+            self.affiliates.len()
+        );
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.affiliates.is_empty()
+    }
 }
 
 impl fmt::Display for TalosCluster {

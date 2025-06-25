@@ -48,7 +48,18 @@ impl DiscoveryService {
 
     async fn run_gc(&self) {
         debug!("run_gc");
-        let clusters = self.clusters.lock().await;
+
+        let mut clusters = self.clusters.lock().await;
+        clusters.values_mut().for_each(|cluster| cluster.run_gc());
+
+        let before_len = clusters.len();
+        clusters.retain(|_, cluster| !cluster.is_empty());
+
+        info!(
+            "GC clusters, removed clusters: {}, remaining clusters: {}",
+            before_len - clusters.len(),
+            clusters.len()
+        );
 
         clusters
             .iter()
@@ -128,6 +139,10 @@ impl Cluster for DiscoveryService {
         if let Some(cluster) = clusters.get_mut(&request.cluster_id) {
             return cluster.add_affiliate(&request).await;
         }
+        info!(
+            "Creating new cluster with id {}",
+            request.cluster_id.clone()
+        );
         let mut cluster = TalosCluster::new(request.cluster_id.clone());
         let res = cluster.add_affiliate(&request).await;
         clusters.insert(request.cluster_id.clone(), cluster);
