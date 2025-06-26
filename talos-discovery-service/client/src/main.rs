@@ -1,10 +1,11 @@
+mod chat;
+mod client;
+
 use clap::command;
 use clap::{Parser, Subcommand};
-use tonic::transport::Channel;
-use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
-use discovery_api::{HelloRequest, cluster_client::ClusterClient};
+use crate::client::Client;
 
 #[derive(Parser, Debug)]
 #[command(name = "MyApp")]
@@ -58,114 +59,6 @@ enum Commands {
     },
 }
 
-// async fn chat_loop(username: String, password: Option<String>) {}
-
-impl Commands {
-    pub async fn execute(&self) {
-        match self {
-            Commands::Chat {
-                chatroom,
-                username,
-                password,
-            } => {
-                println!("Chatting as {} with password {:?}", username, password);
-            }
-            Commands::Upload { filepath } => {
-                println!("Uploading file: {}", filepath);
-            }
-            Commands::Download { filepath } => {
-                println!("Downloading file: {}", filepath);
-            }
-        }
-    }
-}
-
-struct Cluster {
-    cluster_id: String,
-    affiliate_id: String,
-    address: String,
-    port: u16,
-}
-
-struct Client {
-    command: ClientCommand,
-    client: ClusterClient<Channel>,
-    cluster: Cluster,
-}
-
-enum ClientCommand {
-    Chat(Chat),
-    Upload,
-    Download,
-}
-
-struct Chat {
-    chatroom: String,
-    username: String,
-    password: Option<String>,
-}
-
-impl Chat {
-    fn new(chatroom: String, username: String, password: Option<String>) -> Self {
-        Self {
-            chatroom,
-            username,
-            password,
-        }
-    }
-}
-
-impl Client {
-    async fn new(cli_args: Cli) -> anyhow::Result<Self> {
-        let command = match cli_args.command {
-            Commands::Chat {
-                chatroom,
-                username,
-                password,
-            } => ClientCommand::Chat(Chat::new(chatroom, username, password)),
-            Commands::Upload { filepath } => ClientCommand::Upload,
-            Commands::Download { filepath } => ClientCommand::Download,
-        };
-
-        let client = Self::connect(cli_args.address.clone(), cli_args.port).await?;
-
-        Ok(Self {
-            command,
-            client,
-            cluster: Cluster {
-                cluster_id: "todo!()".to_string(),
-                affiliate_id: "todo!()".to_string(),
-                address: cli_args.address,
-                port: cli_args.port,
-            },
-        })
-    }
-
-    async fn connect(address: String, port: u16) -> anyhow::Result<ClusterClient<Channel>> {
-        let addr = format!("http://{}:{}", address, port);
-        let mut client = ClusterClient::connect(addr).await?;
-        info!("connected");
-
-        let _ = client
-            .hello(HelloRequest {
-                cluster_id: "1337".to_string(),
-                client_version: "1338".to_string(),
-            })
-            .await?;
-
-        Ok(client)
-    }
-
-    pub async fn execute(self) -> anyhow::Result<()> {
-        println!("EXEC CHAT");
-        todo!()
-    }
-
-    pub async fn _hash(plain: String) -> String {
-        sha256::digest(plain)
-    }
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli_args = Cli::parse();
@@ -175,5 +68,5 @@ async fn main() -> anyhow::Result<()> {
         .with(fmt::layer().with_target(false))
         .init();
 
-    Ok(Client::new(cli_args).await?.execute().await?)
+    Client::new(cli_args).await?.execute().await
 }
