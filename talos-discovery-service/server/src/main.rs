@@ -1,13 +1,11 @@
 mod cluster;
 mod service;
-mod discovery {
-    tonic::include_proto!("sidero.discovery.server");
-}
 
 use clap::Parser;
+use discovery_api::cluster_server::ClusterServer;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
-use crate::{discovery::cluster_server::ClusterServer, service::DiscoveryService};
+use crate::service::DiscoveryService;
 
 #[derive(Parser, Debug, Clone)]
 #[clap(version = "1.0", author = "genua GmbH", next_line_help = true)]

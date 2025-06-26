@@ -12,7 +12,7 @@ use tokio::sync::{
 use tonic::Status;
 use tracing::{debug, error, info};
 
-use crate::discovery::{self, AffiliateUpdateRequest, WatchResponse};
+use discovery_api::{self, AffiliateUpdateRequest, WatchResponse};
 
 pub(crate) type ClusterId = String;
 type AffiliateId = String;
@@ -34,25 +34,12 @@ pub(crate) struct Affiliate {
     expiration: SystemTime,
 }
 
-impl From<Affiliate> for discovery::Affiliate {
+impl From<Affiliate> for discovery_api::Affiliate {
     fn from(val: Affiliate) -> Self {
-        discovery::Affiliate {
+        discovery_api::Affiliate {
             id: val.id,
             data: val.data,
             endpoints: val.endpoints,
-        }
-    }
-}
-
-impl From<Vec<&Affiliate>> for discovery::WatchResponse {
-    fn from(val: Vec<&Affiliate>) -> Self {
-        Self {
-            affiliates: val
-                .into_iter()
-                .cloned()
-                .map(Affiliate::into)
-                .collect::<Vec<discovery::Affiliate>>(),
-            deleted: false,
         }
     }
 }
@@ -68,12 +55,23 @@ impl TalosCluster {
         }
     }
 
+    pub async fn convert_watch_response(&self, affiliates: Vec<&Affiliate>) -> discovery_api::WatchResponse {
+        discovery_api::WatchResponse {
+            affiliates: affiliates
+                .into_iter()
+                .cloned()
+                .map(Affiliate::into)
+                .collect::<Vec<discovery_api::Affiliate>>(),
+            deleted: false,
+        }
+    }
+
     pub async fn subscribe(&self) -> Receiver<Result<WatchResponse, Status>> {
         let mut rx = self.watch_broadcaster.subscribe();
         let (tx, rx_stream) = mpsc::channel(Self::BUFFER_SIZE);
 
         let cluster_snapshot = self.get_affiliates().await;
-        let watch_response: WatchResponse = cluster_snapshot.into();
+        let watch_response = self.convert_watch_response(cluster_snapshot).await;
         let _ = tx.send(Ok(watch_response)).await.inspect_err(|err| error!("{}", err));
 
         tokio::spawn(async move {
@@ -90,7 +88,8 @@ impl TalosCluster {
 
     pub async fn broadcast_affiliate_states(&self) {
         let affiliate_states = self.get_affiliates().await;
-        self.send_affiliate_update(affiliate_states.into()).await;
+        self.send_affiliate_update(self.convert_watch_response(affiliate_states).await)
+            .await;
     }
 
     async fn broadcast_deleted_affiliates(&self, expired: HashMap<AffiliateId, Affiliate>) {
@@ -100,7 +99,7 @@ impl TalosCluster {
         let deleted_affiliates = expired
             .into_values()
             .map(Affiliate::into)
-            .collect::<Vec<discovery::Affiliate>>();
+            .collect::<Vec<discovery_api::Affiliate>>();
 
         let response = WatchResponse {
             affiliates: deleted_affiliates,

@@ -276,6 +276,18 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 [[package]]
 name = "client"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "discovery-api",
+ "prost",
+ "prost-types",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "colorchoice"
@@ -288,6 +300,16 @@ name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
+
+[[package]]
+name = "discovery-api"
+version = "0.1.0"
+dependencies = [
+ "prost",
+ "prost-types",
+ "tonic",
+ "tonic-build",
+]
 
 [[package]]
 name = "either"
@@ -995,12 +1017,12 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "clap",
+ "discovery-api",
  "prost",
  "prost-types",
  "tokio",
  "tokio-stream",
  "tonic",
- "tonic-build",
  "tracing",
  "tracing-subscriber",
 ]

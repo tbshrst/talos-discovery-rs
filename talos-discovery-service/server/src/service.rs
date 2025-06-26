@@ -4,12 +4,10 @@ use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 use tracing::{debug, error, info, warn};
 
-use crate::{
-    cluster::{Affiliate, ClusterId, TalosCluster},
-    discovery::{
-        self, cluster_server::Cluster, AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest,
-        AffiliateUpdateResponse, HelloRequest, HelloResponse, ListRequest, ListResponse, WatchRequest, WatchResponse,
-    },
+use crate::cluster::{Affiliate, ClusterId, TalosCluster};
+use discovery_api::{
+    self, cluster_server::Cluster, AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest,
+    AffiliateUpdateResponse, HelloRequest, HelloResponse, ListRequest, ListResponse, WatchRequest, WatchResponse,
 };
 
 #[derive(Clone)]
@@ -194,7 +192,7 @@ impl Cluster for DiscoveryService {
             .into_iter()
             .cloned()
             .map(Affiliate::into)
-            .collect::<Vec<discovery::Affiliate>>();
+            .collect::<Vec<discovery_api::Affiliate>>();
 
         Ok(Response::new(ListResponse { affiliates }))
     }
