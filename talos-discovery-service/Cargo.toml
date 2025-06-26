@@ -7,11 +7,13 @@ members = [
 ]
 
 [workspace.dependencies]
+anyhow = "1.0.98"
 chrono = "0.4.41"
 clap = { version = "4.5", features = ["env", "derive", "std"] }
 discovery-api = { path = "api" }
 prost = { version = "0.13.5" }
 prost-types = { version = "0.13.5" }
+sha256 = "1.6.0"
 tokio = { version = "1.45.1", features = ["rt-multi-thread"] }
 tokio-stream = "0.1.17"
 tonic = { version = "0.13.1", features = ["server"] }
