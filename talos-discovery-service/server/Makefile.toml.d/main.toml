@@ -14,7 +14,7 @@ script = '''
 '''
 
 [env]
-RUST_BUILD_DEBUG_DIR = "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target/debug"
+RUST_BUILD_DEBUG_DIR = "../target/debug"
 IMAGE_REGISTRY = "localhost:32000"
 IMAGE = "localhost:32000/geekweek/talos-discovery-service:latest"
 DOCKERFILE = "${CARGO_MAKE_WORKING_DIRECTORY}/Dockerfile"

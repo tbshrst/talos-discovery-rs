@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: talos-discovery-service
+spec:
+  selector:
+    app: talos-discovery-service
+  ports:
+    - port: {{ .Values.listen_port }}
+      targetPort: {{ .Values.listen_port }}
+      type: ClusterIP
