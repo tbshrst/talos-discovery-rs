@@ -176,7 +176,18 @@ impl Cluster for DiscoveryService {
     async fn list(&self, request: Request<ListRequest>) -> Result<Response<ListResponse>, Status> {
         info!("Cluster node request: List ({})", request.remote_addr().unwrap().ip());
 
-        let mut _clusters = self.clusters.lock().await;
-        unimplemented!();
+        let request = request.into_inner();
+        let cluster_id = request.cluster_id;
+
+        let mut clusters = self.clusters.lock().await;
+        let cluster = self
+            .get_cluster(&mut clusters, cluster_id.clone())
+            .await
+            .ok_or(Status::not_found(format!("Cluster ID {} not found", cluster_id)))
+            .inspect_err(|err| error!("{}", err.to_string()))?;
+
+        let affiliates = cluster.get_affiliates().await.affiliates;
+
+        Ok(Response::new(ListResponse { affiliates }))
     }
 }

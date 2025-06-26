@@ -113,7 +113,7 @@ impl TalosCluster {
         Ok(Response::new(AffiliateUpdateResponse {}))
     }
 
-    async fn get_affiliates(&self) -> WatchResponse {
+    pub(crate) async fn get_affiliates(&self) -> WatchResponse {
         let affiliates = self
             .affiliates
             .clone()
