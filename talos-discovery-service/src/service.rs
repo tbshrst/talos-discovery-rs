@@ -1,14 +1,13 @@
 use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration};
-
 use tokio::{sync::Mutex, time};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 use tracing::{debug, error, info, warn};
 
 use crate::{
-    cluster::{ClusterId, TalosCluster},
+    cluster::{Affiliate, ClusterId, TalosCluster},
     discovery::{
-        cluster_server::Cluster, AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest,
+        self, cluster_server::Cluster, AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest,
         AffiliateUpdateResponse, HelloRequest, HelloResponse, ListRequest, ListResponse, WatchRequest, WatchResponse,
     },
 };
@@ -62,7 +61,7 @@ impl DiscoveryService {
         }
 
         let before_len = clusters.len();
-        clusters.retain(|_, cluster| !cluster.is_empty());
+        clusters.retain(|_, cluster| !cluster.has_affiliates());
 
         info!(
             "GC clusters, removed clusters: {}, remaining clusters: {}",
@@ -109,7 +108,7 @@ impl Cluster for DiscoveryService {
         let cluster = self
             .get_cluster(&mut clusters, cluster_id.clone())
             .await
-            .ok_or(Status::not_found(format!("Cluster with ID {} not found", cluster_id)))
+            .ok_or(Status::not_found(format!("Cluster ID {} not found", cluster_id)))
             .inspect_err(|err| warn!("{}", err.message()))?;
 
         let watch_stream = cluster.subscribe().await;
@@ -120,24 +119,27 @@ impl Cluster for DiscoveryService {
     async fn affiliate_update(
         &self,
         request: Request<AffiliateUpdateRequest>,
-    ) -> std::result::Result<Response<AffiliateUpdateResponse>, Status> {
+    ) -> Result<Response<AffiliateUpdateResponse>, Status> {
         info!(
             "Cluster node request: AffiliateUpdate ({})",
             request.remote_addr().unwrap().ip()
         );
 
-        let mut clusters = self.clusters.lock().await;
         let request = request.into_inner();
+        let cluster_id = request.cluster_id.clone();
 
-        if let Some(cluster) = clusters.get_mut(&request.cluster_id) {
-            return cluster.add_affiliate(&request).await;
-        }
-        info!("Creating new cluster with id {}", request.cluster_id.clone());
-        let mut cluster = TalosCluster::new(request.cluster_id.clone());
-        let res = cluster.add_affiliate(&request).await;
-        clusters.insert(request.cluster_id.clone(), cluster);
+        let mut clusters = self.clusters.lock().await;
+        match clusters.get_mut(&cluster_id) {
+            Some(existing_cluster) => existing_cluster.add_affiliate(&request).await?,
+            None => {
+                info!("Creating new cluster with ID {}", cluster_id.clone());
+                let mut cluster = TalosCluster::new(cluster_id.clone());
+                cluster.add_affiliate(&request).await?;
+                clusters.insert(cluster_id, cluster);
+            }
+        };
 
-        res
+        Ok(Response::new(AffiliateUpdateResponse {}))
     }
 
     async fn affiliate_delete(
@@ -165,9 +167,9 @@ impl Cluster for DiscoveryService {
                 cluster.delete_affiliate(&affiliate_id).await;
                 cluster.broadcast_affiliate_states().await;
 
-                info!("Deleted affiliate {} from cluster {}", affiliate_id, cluster_id);
+                info!("Deleted affiliate ID {} from cluster {}", affiliate_id, cluster_id);
             }
-            None => debug!("Affiliate {} doesn't exist in cluster {}", affiliate_id, cluster_id),
+            None => debug!("Affiliate ID {} doesn't exist in cluster {}", affiliate_id, cluster_id),
         }
 
         Ok(Response::new(AffiliateDeleteResponse {}))
@@ -186,7 +188,13 @@ impl Cluster for DiscoveryService {
             .ok_or(Status::not_found(format!("Cluster ID {} not found", cluster_id)))
             .inspect_err(|err| error!("{}", err.to_string()))?;
 
-        let affiliates = cluster.get_affiliates().await.affiliates;
+        let affiliates = cluster
+            .get_affiliates()
+            .await
+            .into_iter()
+            .cloned()
+            .map(Affiliate::into)
+            .collect::<Vec<discovery::Affiliate>>();
 
         Ok(Response::new(ListResponse { affiliates }))
     }

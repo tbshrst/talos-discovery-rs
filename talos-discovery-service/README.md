@@ -1,7 +1,7 @@
 # talos-discovery-service
 
 ## Run
-* RUST_LOG=talos_discovery_service=debug cargo run
+* RUST_LOG=talos_discovery_service=debug cargo run -h
 
 ## Dev
-* deploy operator to local kubernetes cluster: `cargo make skaffold-run`
+* deploy discovery service to local kubernetes cluster: `cargo make skaffold-run`

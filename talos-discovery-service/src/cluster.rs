@@ -9,10 +9,10 @@ use tokio::sync::{
     broadcast::Sender,
     mpsc::{self, Receiver},
 };
-use tonic::{Response, Status};
+use tonic::Status;
 use tracing::{debug, error, info};
 
-use crate::discovery::{self, AffiliateUpdateRequest, AffiliateUpdateResponse, WatchResponse};
+use crate::discovery::{self, AffiliateUpdateRequest, WatchResponse};
 
 pub(crate) type ClusterId = String;
 type AffiliateId = String;
@@ -44,21 +44,37 @@ impl From<Affiliate> for discovery::Affiliate {
     }
 }
 
+impl From<Vec<&Affiliate>> for discovery::WatchResponse {
+    fn from(val: Vec<&Affiliate>) -> Self {
+        Self {
+            affiliates: val
+                .into_iter()
+                .cloned()
+                .map(Affiliate::into)
+                .collect::<Vec<discovery::Affiliate>>(),
+            deleted: false,
+        }
+    }
+}
+
 impl TalosCluster {
+    const BUFFER_SIZE: usize = 64;
+
     pub fn new(cluster_id: ClusterId) -> TalosCluster {
         TalosCluster {
             id: cluster_id,
             affiliates: HashMap::new(),
-            watch_broadcaster: Sender::new(16),
+            watch_broadcaster: Sender::new(Self::BUFFER_SIZE),
         }
     }
 
     pub async fn subscribe(&self) -> Receiver<Result<WatchResponse, Status>> {
         let mut rx = self.watch_broadcaster.subscribe();
-        let (tx, rx_stream) = mpsc::channel(128);
+        let (tx, rx_stream) = mpsc::channel(Self::BUFFER_SIZE);
 
-        let snapshot = self.get_affiliates().await;
-        let _ = tx.send(Ok(snapshot)).await.inspect_err(|err| error!("{}", err));
+        let cluster_snapshot = self.get_affiliates().await;
+        let watch_response: WatchResponse = cluster_snapshot.into();
+        let _ = tx.send(Ok(watch_response)).await.inspect_err(|err| error!("{}", err));
 
         tokio::spawn(async move {
             while let Ok(msg) = rx.recv().await {
@@ -74,13 +90,41 @@ impl TalosCluster {
 
     pub async fn broadcast_affiliate_states(&self) {
         let affiliate_states = self.get_affiliates().await;
-        self.send_affiliate_update(affiliate_states).await;
+        self.send_affiliate_update(affiliate_states.into()).await;
     }
 
-    pub async fn add_affiliate(
-        &mut self,
-        request: &AffiliateUpdateRequest,
-    ) -> Result<Response<AffiliateUpdateResponse>, Status> {
+    async fn broadcast_deleted_affiliates(&self, expired: HashMap<AffiliateId, Affiliate>) {
+        if expired.is_empty() {
+            return;
+        }
+        let deleted_affiliates = expired
+            .into_values()
+            .map(Affiliate::into)
+            .collect::<Vec<discovery::Affiliate>>();
+
+        let response = WatchResponse {
+            affiliates: deleted_affiliates,
+            deleted: true,
+        };
+
+        self.send_affiliate_update(response).await;
+    }
+
+    async fn send_affiliate_update(&self, response: WatchResponse) {
+        if self.watch_broadcaster.receiver_count() == 0 {
+            return;
+        }
+        let _ = self
+            .watch_broadcaster
+            .send(response)
+            .inspect_err(|err| error!("{}", err));
+    }
+
+    pub fn has_affiliates(&self) -> bool {
+        self.affiliates.is_empty()
+    }
+
+    pub async fn add_affiliate(&mut self, request: &AffiliateUpdateRequest) -> Result<(), Status> {
         let ttl = request
             .ttl
             .ok_or(Status::invalid_argument("Invalid TTL"))
@@ -105,36 +149,17 @@ impl TalosCluster {
         };
 
         self.affiliates.insert(affiliate.id.clone(), affiliate);
+
         info!("Added affiliate: {}", request.affiliate_id,);
         info!("Number of affiliates: {}", self.affiliates.len());
 
         self.broadcast_affiliate_states().await;
 
-        Ok(Response::new(AffiliateUpdateResponse {}))
+        Ok(())
     }
 
-    pub(crate) async fn get_affiliates(&self) -> WatchResponse {
-        let affiliates = self
-            .affiliates
-            .clone()
-            .into_values()
-            .map(Affiliate::into)
-            .collect::<Vec<discovery::Affiliate>>();
-
-        WatchResponse {
-            affiliates,
-            deleted: false,
-        }
-    }
-
-    async fn send_affiliate_update(&self, response: WatchResponse) {
-        if self.watch_broadcaster.receiver_count() == 0 {
-            return;
-        }
-        let _ = self
-            .watch_broadcaster
-            .send(response)
-            .inspect_err(|err| error!("{}", err));
+    pub(crate) async fn get_affiliates(&self) -> Vec<&Affiliate> {
+        self.affiliates.values().collect()
     }
 
     pub async fn get_affiliate(&self, affiliate_id: &AffiliateId) -> Option<&Affiliate> {
@@ -142,6 +167,7 @@ impl TalosCluster {
     }
 
     pub async fn delete_affiliate(&mut self, affiliate_id: &AffiliateId) -> Option<Affiliate> {
+        debug!("Removing affiliate ID {}", affiliate_id);
         self.affiliates.remove(affiliate_id)
     }
 
@@ -153,9 +179,10 @@ impl TalosCluster {
             .filter(|(_, a)| SystemTime::now() > a.expiration)
             .collect::<HashMap<_, _>>();
 
-        expired.clone().into_keys().for_each(|k| {
-            self.affiliates.remove(&k);
-        });
+        for exp in expired.values() {
+            self.delete_affiliate(&exp.id).await;
+        }
+
         info!(
             "GC for cluster {}: Removed {} affiliates. Remaining: {}",
             self.id,
@@ -164,27 +191,6 @@ impl TalosCluster {
         );
 
         self.broadcast_deleted_affiliates(expired).await;
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.affiliates.is_empty()
-    }
-
-    async fn broadcast_deleted_affiliates(&self, expired: HashMap<AffiliateId, Affiliate>) {
-        if expired.is_empty() {
-            return;
-        }
-        let deleted_affiliates = expired
-            .into_values()
-            .map(Affiliate::into)
-            .collect::<Vec<discovery::Affiliate>>();
-
-        let response = WatchResponse {
-            affiliates: deleted_affiliates,
-            deleted: true,
-        };
-
-        self.send_affiliate_update(response).await;
     }
 }
 
