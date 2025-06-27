@@ -150,9 +150,12 @@ cluster:
     - Loeschen der registrierten VMs → fuehrt zur Reduktion der Affiliates, sind alle Affiliates eines Clusters geloescht, wird der Cluster ebenfalls geloescht
         -  bisher Trigger nicht verstanden, wann Affiliates tatsaechlich geloescht werden
     - Aufruf des Dockercontainers: `podman run -p 3000:3000 -p 3001:3001 ghcr.io/siderolabs/discovery-service:v1.0.9 --debug`
+<details>
+<summary>Click to expand Logs</summary>
 ```
 ::include{file=discovery_service_log.txt}
 ```
+</details>
 - es werden offensichtlich Affiliates geloescht, aber der Github Code wirkt, als waere der API Call AffilliateDelete implementiert, aber wird nirgends aufgerufen [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-service%20AffiliateDelete&type=code) → AffiliateDelete wird einzig vom discovery-client (Node) aufgerufen [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-client%20AffiliateDelete&type=code)
 - aehnlich sieht es beim API Call List aus [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-service+List&type=code) → der discovery-client (Node) implementiert nicht den API Call List, tatsaechlich unimplemented? [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-client%20List&type=code)
 - Garbage Collection: Im AffiliateUpdate Request ist ein TTL Wert. Dieser wird vom Server als expiration Date interpretiert. Per Default ist dies einmal jede Mitute [Github](https://github.com/siderolabs/discovery-service/blob/main/cmd/discovery-service/main.go#L32)
