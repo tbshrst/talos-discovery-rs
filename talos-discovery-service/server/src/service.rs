@@ -2,7 +2,7 @@ use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration};
 use tokio::{sync::Mutex, time};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 use crate::cluster::{Affiliate, ClusterId, TalosCluster};
 use discovery_api::{
@@ -34,6 +34,19 @@ impl DiscoveryService {
         cluster_id: ClusterId,
     ) -> Option<&'a mut TalosCluster> {
         clusters.get_mut(&cluster_id)
+    }
+
+    async fn get_or_create_cluster<'a>(
+        &self,
+        clusters: &'a mut HashMap<ClusterId, TalosCluster>,
+        cluster_id: ClusterId,
+    ) -> &'a mut TalosCluster {
+        if clusters.contains_key(&cluster_id) {
+            return self.get_cluster(clusters, cluster_id).await.unwrap();
+        }
+        info!("Creating new cluster with ID {}", cluster_id.clone());
+        clusters.insert(cluster_id.clone(), TalosCluster::new(cluster_id.clone()));
+        self.get_cluster(clusters, cluster_id).await.unwrap()
     }
 
     async fn run_gc_loop(&self) {
@@ -71,6 +84,24 @@ impl DiscoveryService {
             .iter()
             .for_each(|(_, cluster)| debug!("{}", cluster.to_string()));
     }
+
+    async fn update_clusters(
+        &self,
+        request: AffiliateUpdateRequest,
+    ) -> Result<Response<AffiliateUpdateResponse>, Status> {
+        let mut clusters = self.clusters.lock().await;
+        let cluster_id = request.cluster_id.clone();
+        match clusters.get_mut(&cluster_id) {
+            Some(existing_cluster) => existing_cluster.add_affiliate(&request).await?,
+            None => {
+                info!("Creating new cluster with ID {}", cluster_id.clone());
+                let mut cluster = TalosCluster::new(cluster_id.clone());
+                cluster.add_affiliate(&request).await?;
+                clusters.insert(cluster_id, cluster);
+            }
+        };
+        Ok(Response::new(AffiliateUpdateResponse {}))
+    }
 }
 
 #[tonic::async_trait]
@@ -103,11 +134,7 @@ impl Cluster for DiscoveryService {
         let cluster_id = request.cluster_id;
 
         let mut clusters = self.clusters.lock().await;
-        let cluster = self
-            .get_cluster(&mut clusters, cluster_id.clone())
-            .await
-            .ok_or(Status::not_found(format!("Cluster ID {} not found", cluster_id)))
-            .inspect_err(|err| warn!("{}", err.message()))?;
+        let cluster = self.get_or_create_cluster(&mut clusters, cluster_id.clone()).await;
 
         let watch_stream = cluster.subscribe().await;
 
@@ -124,20 +151,8 @@ impl Cluster for DiscoveryService {
         );
 
         let request = request.into_inner();
-        let cluster_id = request.cluster_id.clone();
 
-        let mut clusters = self.clusters.lock().await;
-        match clusters.get_mut(&cluster_id) {
-            Some(existing_cluster) => existing_cluster.add_affiliate(&request).await?,
-            None => {
-                info!("Creating new cluster with ID {}", cluster_id.clone());
-                let mut cluster = TalosCluster::new(cluster_id.clone());
-                cluster.add_affiliate(&request).await?;
-                clusters.insert(cluster_id, cluster);
-            }
-        };
-
-        Ok(Response::new(AffiliateUpdateResponse {}))
+        self.update_clusters(request).await
     }
 
     async fn affiliate_delete(
