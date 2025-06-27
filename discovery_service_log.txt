@@ -1,0 +1,724 @@
+$ podman run -p 3000: 3000 -p 3001: 3001 ghcr.io/siderolabs/discovery-service:v1.0.9 --debug
+2025-06-23T20: 05: 21.189Z	INFO	service/service.go: 112	service starting
+2025-06-23T20: 05: 21.196Z	WARN	service/service.go: 124	failed to load state from storage	{
+    "error": "failed to open file: open /var/discovery-service/state.binpb: no such file or directory"
+}
+github.com/siderolabs/discovery-service/pkg/service.Run
+	/src/pkg/service/service.go: 124
+main.main.func1
+	/src/cmd/discovery-service/main.go: 84
+main.signalHandler
+	/src/cmd/discovery-service/main.go: 120
+main.main
+	/src/cmd/discovery-service/main.go: 83
+runtime.main
+	/usr/local/go/src/runtime/proc.go: 272
+2025-06-23T20: 05: 21.210Z	INFO	service/service.go: 251	metrics starting	{
+    "address": ":2122"
+}
+2025-06-23T20: 05: 21.209Z	INFO	storage/storage.go: 114	start storage loop	{
+    "component": "storage",
+    "path": "/var/discovery-service/state.binpb",
+    "interval": "10m0s"
+}
+2025-06-23T20: 05: 21.210Z	INFO	service/service.go: 221	landing server starting	{
+    "address": "[::]:3001"
+}
+2025-06-23T20: 05: 21.210Z	INFO	service/service.go: 191	API server starting	{
+    "address": "[::]:3000"
+}
+2025-06-23T20: 05: 21.210Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 0,
+    "current_affiliates": 0,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 06: 14.159Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/Hello	{
+    "duration": "401.706µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "client_version": "v1.9.2"
+}
+2025-06-23T20: 06: 14.167Z	DEBUG	state/state.go: 80	cluster created	{
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM="
+}
+2025-06-23T20: 06: 14.169Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "84.02µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "3yxS7OCsRhexjXnvCadBjOuevAfFw9RpmaQtdKK4CjTA"
+}
+2025-06-23T20: 06: 17.882Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/Hello	{
+    "duration": "115.416µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "client_version": "v1.9.2"
+}
+2025-06-23T20: 06: 17.886Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "83.488µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "DJaaT4I5059f12L1X3vMDivbJozWjjQIDMoeuYmxfnvB"
+}
+2025-06-23T20: 06: 21.211Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 2,
+    "current_endpoints": 0,
+    "current_subscriptions": 2
+}
+2025-06-23T20: 06: 21.232Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/Hello	{
+    "duration": "101.968µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "client_version": "v1.9.2"
+}
+2025-06-23T20: 06: 21.235Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "54.964µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "VhetJC3jnN2YTBmly1po21n0LeHra81yln9wstnEV6V"
+}
+2025-06-23T20: 06: 48.074Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/Hello	{
+    "duration": "121.103µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "client_version": "v1.9.2"
+}
+2025-06-23T20: 06: 48.076Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "61.492µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "nfESGn66AvI24ShjFxkbmdODYBktNz7UQMjCSQexCUv"
+}
+2025-06-23T20: 06: 49.306Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/Hello	{
+    "duration": "85.114µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "client_version": "v1.9.2"
+}
+2025-06-23T20: 06: 49.309Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "90.091µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "X3Lqt4fPE82bcWDfnCIDvPRfMOPRYWDaxdpM3PwyqhgA"
+}
+2025-06-23T20: 07: 21.212Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 5,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 07: 25.426Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/Hello	{
+    "duration": "114.566µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "client_version": "v1.9.2"
+}
+2025-06-23T20: 07: 25.430Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "94.743µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "MEccmCf5DaeD4pkVsBtsUkbHD3Be0egepugLLu7yFzJF"
+}
+2025-06-23T20: 08: 21.210Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 6
+}
+2025-06-23T20: 09: 21.268Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 6
+}
+2025-06-23T20: 09: 56.627Z	INFO	server/logging.go: 92	/sidero.discovery.server.Cluster/Watch	{
+    "duration": "3m7.318392282s",
+    "code": "OK",
+    "peer.address": "10.0.2.100"
+}
+2025-06-23T20: 10: 21.213Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 11: 21.221Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 12: 21.220Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 12: 58.474Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "348.477µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "3yxS7OCsRhexjXnvCadBjOuevAfFw9RpmaQtdKK4CjTA"
+}
+2025-06-23T20: 12: 58.502Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "101.169µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "DJaaT4I5059f12L1X3vMDivbJozWjjQIDMoeuYmxfnvB"
+}
+2025-06-23T20: 12: 59.407Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "73.061µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "nfESGn66AvI24ShjFxkbmdODYBktNz7UQMjCSQexCUv"
+}
+2025-06-23T20: 12: 59.417Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "56.537µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "VhetJC3jnN2YTBmly1po21n0LeHra81yln9wstnEV6V"
+}
+2025-06-23T20: 12: 59.850Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "143.648µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "MEccmCf5DaeD4pkVsBtsUkbHD3Be0egepugLLu7yFzJF"
+}
+2025-06-23T20: 13: 21.223Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 14: 21.229Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 15: 21.268Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 15: 21.283Z	INFO	storage/storage.go: 184	state saved	{
+    "component": "storage",
+    "path": "/var/discovery-service/state.binpb",
+    "clusters": 1,
+    "affiliates": 6,
+    "endpoints": 0,
+    "duration": "15.238694ms",
+    "size_bytes": 1338
+}
+2025-06-23T20: 16: 21.227Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 17: 21.211Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 18: 21.263Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 19: 21.211Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 20: 21.211Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 21: 21.269Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 22: 21.213Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 23: 21.264Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 24: 21.219Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 25: 21.228Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 25: 21.239Z	INFO	storage/storage.go: 184	state saved	{
+    "component": "storage",
+    "path": "/var/discovery-service/state.binpb",
+    "clusters": 1,
+    "affiliates": 6,
+    "endpoints": 0,
+    "duration": "11.227523ms",
+    "size_bytes": 1338
+}
+2025-06-23T20: 26: 21.231Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 5
+}
+2025-06-23T20: 26: 30.419Z	INFO	server/logging.go: 92	/sidero.discovery.server.Cluster/Watch	{
+    "duration": "20m16.251268496s",
+    "code": "OK",
+    "peer.address": "10.0.2.100"
+}
+2025-06-23T20: 27: 15.730Z	INFO	server/logging.go: 92	/sidero.discovery.server.Cluster/Watch	{
+    "duration": "20m27.654031808s",
+    "code": "OK",
+    "peer.address": "10.0.2.100"
+}
+2025-06-23T20: 27: 16.527Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/Hello	{
+    "duration": "115.526µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "client_version": "v1.9.2"
+}
+2025-06-23T20: 27: 16.529Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "103.408µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "nfESGn66AvI24ShjFxkbmdODYBktNz7UQMjCSQexCUv"
+}
+2025-06-23T20: 27: 16.532Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "37.46µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "nfESGn66AvI24ShjFxkbmdODYBktNz7UQMjCSQexCUv"
+}
+2025-06-23T20: 27: 21.213Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 4
+}
+2025-06-23T20: 27: 58.505Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "359.3µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "DJaaT4I5059f12L1X3vMDivbJozWjjQIDMoeuYmxfnvB"
+}
+2025-06-23T20: 27: 59.418Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "87.201µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "VhetJC3jnN2YTBmly1po21n0LeHra81yln9wstnEV6V"
+}
+2025-06-23T20: 27: 59.850Z	INFO	server/logging.go: 58	/sidero.discovery.server.Cluster/AffiliateUpdate	{
+    "duration": "98.582µs",
+    "code": "OK",
+    "peer.address": "10.0.2.100",
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM=",
+    "affiliate_id": "MEccmCf5DaeD4pkVsBtsUkbHD3Be0egepugLLu7yFzJF"
+}
+2025-06-23T20: 28: 21.227Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 4
+}
+2025-06-23T20: 28: 45.329Z	INFO	server/logging.go: 92	/sidero.discovery.server.Cluster/Watch	{
+    "duration": "1m28.799900068s",
+    "code": "OK",
+    "peer.address": "10.0.2.100"
+}
+2025-06-23T20: 29: 21.245Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 3
+}
+2025-06-23T20: 30: 15.955Z	INFO	server/logging.go: 92	/sidero.discovery.server.Cluster/Watch	{
+    "duration": "22m50.525291047s",
+    "code": "OK",
+    "peer.address": "10.0.2.100"
+}
+2025-06-23T20: 30: 21.214Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 2
+}
+2025-06-23T20: 31: 21.229Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 2
+}
+2025-06-23T20: 31: 45.302Z	INFO	server/logging.go: 92	/sidero.discovery.server.Cluster/Watch	{
+    "duration": "25m24.06752636s",
+    "code": "OK",
+    "peer.address": "10.0.2.100"
+}
+2025-06-23T20: 32: 21.244Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 1
+}
+2025-06-23T20: 33: 21.211Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 1
+}
+2025-06-23T20: 34: 01.237Z	INFO	server/logging.go: 92	/sidero.discovery.server.Cluster/Watch	{
+    "duration": "27m43.34762407s",
+    "code": "OK",
+    "peer.address": "10.0.2.100"
+}
+2025-06-23T20: 34: 21.229Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 35: 21.219Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 35: 21.229Z	INFO	storage/storage.go: 184	state saved	{
+    "component": "storage",
+    "path": "/var/discovery-service/state.binpb",
+    "clusters": 1,
+    "affiliates": 6,
+    "endpoints": 0,
+    "duration": "9.843163ms",
+    "size_bytes": 1338
+}
+2025-06-23T20: 36: 21.268Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 6,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 37: 21.231Z	INFO	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 1,
+    "current_clusters": 1,
+    "current_affiliates": 5,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 38: 21.215Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 5,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 39: 21.239Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 5,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 40: 21.247Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 5,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 41: 21.251Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 5,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 42: 21.261Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 5,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 43: 21.261Z	INFO	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 1,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 44: 21.264Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 45: 21.268Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 45: 21.275Z	INFO	storage/storage.go: 184	state saved	{
+    "component": "storage",
+    "path": "/var/discovery-service/state.binpb",
+    "clusters": 1,
+    "affiliates": 4,
+    "endpoints": 0,
+    "duration": "7.078304ms",
+    "size_bytes": 907
+}
+2025-06-23T20: 46: 21.252Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 47: 21.215Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 48: 21.211Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 49: 21.263Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 50: 21.220Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 51: 21.243Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 52: 21.213Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 53: 21.211Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 54: 21.227Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 55: 21.214Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 55: 21.225Z	INFO	storage/storage.go: 184	state saved	{
+    "component": "storage",
+    "path": "/var/discovery-service/state.binpb",
+    "clusters": 1,
+    "affiliates": 4,
+    "endpoints": 0,
+    "duration": "10.313829ms",
+    "size_bytes": 907
+}
+2025-06-23T20: 56: 21.267Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 1,
+    "current_affiliates": 4,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 57: 21.230Z	INFO	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 1,
+    "current_clusters": 1,
+    "current_affiliates": 3,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 58: 21.252Z	DEBUG	state/state.go: 94	cluster removed	{
+    "cluster_id": "KuOnBMOCcQpf3LQHACPKi90xSkNvgmSBXhwrVt_KTwM="
+}
+2025-06-23T20: 58: 21.253Z	INFO	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 1,
+    "removed_affiliates": 3,
+    "current_clusters": 0,
+    "current_affiliates": 0,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T20: 59: 21.240Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 0,
+    "current_affiliates": 0,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
+2025-06-23T21: 00: 21.267Z	DEBUG	state/state.go: 121	garbage collection run	{
+    "removed_clusters": 0,
+    "removed_affiliates": 0,
+    "current_clusters": 0,
+    "current_affiliates": 0,
+    "current_endpoints": 0,
+    "current_subscriptions": 0
+}
