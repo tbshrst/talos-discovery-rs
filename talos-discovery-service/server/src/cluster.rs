@@ -46,6 +46,12 @@ impl From<Affiliate> for discovery_api::Affiliate {
 
 impl TalosCluster {
     const BUFFER_SIZE: usize = 64;
+    // XXX: custom extension
+    pub const MAX_IDENTIFIER_LENGTH: usize = 256;
+    // XXX: custom extension
+    pub const MAX_PAYLOAD_LENGTH: usize = 512 * 1024;
+    // XXX: custom extension
+    pub const MAX_TTL_DURATION: Duration = Duration::from_secs(2 * 60 * 60); // 2 hours
 
     pub fn new(cluster_id: ClusterId) -> TalosCluster {
         TalosCluster {

@@ -133,6 +133,11 @@ impl Cluster for DiscoveryService {
         let request = request.into_inner();
         let cluster_id = request.cluster_id;
 
+        // XXX: custom extension
+        if cluster_id.len() > TalosCluster::MAX_IDENTIFIER_LENGTH {
+            return Err(Status::invalid_argument("maximum identifier length exceeded"));
+        }
+
         let mut clusters = self.clusters.lock().await;
         let cluster = self.get_or_create_cluster(&mut clusters, cluster_id.clone()).await;
 
@@ -151,6 +156,34 @@ impl Cluster for DiscoveryService {
         );
 
         let request = request.into_inner();
+
+        // XXX: custom extension
+        if request.cluster_id.len() > TalosCluster::MAX_IDENTIFIER_LENGTH
+            || request.affiliate_id.len() > TalosCluster::MAX_IDENTIFIER_LENGTH
+        {
+            return Err(Status::invalid_argument("maximum identifier length exceeded"));
+        }
+
+        // XXX: custom extension
+        if let Some(affiliate_data) = &request.affiliate_data {
+            if affiliate_data.len() > TalosCluster::MAX_PAYLOAD_LENGTH {
+                return Err(Status::invalid_argument("maximum payload length exceeded"));
+            }
+        }
+
+        // XXX: custom extension
+        for endpoint in &request.affiliate_endpoints {
+            if endpoint.len() > TalosCluster::MAX_PAYLOAD_LENGTH {
+                return Err(Status::invalid_argument("maximum payload length exceeded"));
+            }
+        }
+
+        // XXX: custom extension
+        if let Some(ttl) = &request.ttl {
+            if ttl.seconds <= 0 || ttl.seconds as u64 > TalosCluster::MAX_TTL_DURATION.as_secs() {
+                return Err(Status::invalid_argument("maximum TTL exceeded"));
+            }
+        }
 
         self.update_clusters(request).await
     }
