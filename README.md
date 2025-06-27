@@ -11,7 +11,7 @@
 # Dokumentation zum Discovery Protokoll
 
 ## Discovery Flow
-- Protobuf API fuer Client-Server-Kommunikation (discovery-client (Node) ↔ Discovery Service) (Github)
+- Protobuf API fuer Client-Server-Kommunikation (discovery-client (Node) ↔ Discovery Service) [Github](https://github.com/siderolabs/discovery-api/blob/v0.1.6/api/v1alpha1/server/cluster.proto)
 1. Client sendet HelloRequest, wird mit HelloResponse beantwortet
     - HelloRequest
         - ClusterId: zufaelliger String, der initial mit talosctl fuer alle Nodes des Clusters generiert wird
@@ -26,9 +26,9 @@
     - WatchResponse:
         - Liste von Affiliates
         - flag, ob Affiliates geloescht wurden oder nicht
-        - der erste WatchResponse ist immer als snapshot==true markiert, alle darauffolgenden hingegen nicht mehr (Github)
+        - der erste WatchResponse ist immer als snapshot==true markiert, alle darauffolgenden hingegen nicht mehr [Github](https://github.com/siderolabs/discovery-client/blob/main/pkg/client/client.go#L574)
     - Aenderungen in serverseitiger Affiliateliste (hinzufuegen/loeschen) werden an alle discovery-clients gebroadcasted
-        - Verarbeitung im discovery-client in "parseReply" (Github)
+        - Verarbeitung im discovery-client in "parseReply" [Github](https://github.com/siderolabs/discovery-client/blob/v0.1.11/pkg/client/client.go#L385)
 3. Client sendet direkt nach Nachrichtenaustausch 2) ein AffiliateUpdate
     - AffiliateUpdateRequest:
         - ClusterId: ClusterId im Klartext (wird vom aufrufenden Clientcode waehrend der initialisierung des "Clientmoduls" gesetzt, kommt aus der Konfiguration, die per talosctl generiert wurde)
@@ -37,7 +37,7 @@
         - AffiliateEndpoints: verschluesselte Informationen ueber die verfuegbaren Endpunkte (aus Sicht des Clients)
     - AffiliateUpdateResponse
         - leer, wird vom Client ignoriert
-    - Verarbeitung im discovery-client in "refreshData" (Github)
+    - Verarbeitung im discovery-client in "refreshData" [Github](https://github.com/siderolabs/discovery-client/blob/v0.1.11/pkg/client/client.go#L493)
         - AffiliateUpdates werden unter folgenden Bedinungen gesendet (TODO: unvollstaendig?!)
             - nach Zeitintervall TTL/2
             - der aufrufende Clientcode updated die Affiliatekonfiguration
@@ -47,15 +47,15 @@
         - AffiliateId: ZielAffiliate
     - AffiliateDeleteResponse
         - leer, wird vom Client ignoriert
-    - wird in "refresData" ausgeloest, wenn aufrufender Clientcode beschliesst, den Node aus dem Cluster zu loeschen. Wird durch "DeleteLocalAffiliate" ausgeloest (Github)
-    - einzige Stelle in Talos, die "DeleteLocalAffiliate" aufruft: Github
+    - wird in "refresData" ausgeloest, wenn aufrufender Clientcode beschliesst, den Node aus dem Cluster zu loeschen. Wird durch "DeleteLocalAffiliate" ausgeloest [Github](https://github.com/siderolabs/discovery-client/blob/v0.1.11/pkg/client/client.go#L203)
+    - einzige Stelle in Talos, die "DeleteLocalAffiliate" aufruft: [Github](https://github.com/siderolabs/talos/blob/c948d7617d1579c462a809b37956fc98270fcce4/internal/app/machined/pkg/controllers/cluster/discovery_service.go#L273)
     - kennt man beide Werte eines anderen Nodes, kann man diesen aus dem Cluster loeschen. Beide Strings sind sehr wahrscheinlich aber wieder zu lang, um gueltige Paare bruteforcen zu koennen
 
 ## Clientinformationen
 
 ### Senden
 
-Der client sendet mit AffiliateUpdate verschluesselte Informationen ueber sich selbst an den Service. Die Konfiguration der Affiliateinformationen passiert in SetLocalData (Github), welche vom Client ("TalosOS") aufgerufen wird. Optional sind weitere Endpunkte konfigurierbar.
+Der client sendet mit AffiliateUpdate verschluesselte Informationen ueber sich selbst an den Service. Die Konfiguration der Affiliateinformationen passiert in SetLocalData [Github](https://github.com/siderolabs/discovery-client/blob/v0.1.11/pkg/client/client.go#L154), welche vom Client ("TalosOS") aufgerufen wird. Optional sind weitere Endpunkte konfigurierbar.
 
 Es werden folgende Schritte durchgefuehrt:
 
@@ -151,12 +151,12 @@ cluster:
         -  bisher Trigger nicht verstanden, wann Affiliates tatsaechlich geloescht werden
     - Aufruf des Dockercontainers: `podman run -p 3000:3000 -p 3001:3001 ghcr.io/siderolabs/discovery-service:v1.0.9 --debug`
 ```
-::include(file=discovery_service_log.txt)
+::include{file=discovery_service_log.txt}
 ```
-- es werden offensichtlich Affiliates geloescht, aber der Github Code wirkt, als waere der API Call AffilliateDelete implementiert, aber wird nirgends aufgerufen (Github) → AffiliateDelete wird einzig vom discovery-client (Node) aufgerufen (Github)
-- aehnlich sieht es beim API Call List aus (Github) → der discovery-client (Node) implementiert nicht den API Call List, tatsaechlich unimplemented? (Github)
-- Garbage Collection: Im AffiliateUpdate Request ist ein TTL Wert. Dieser wird vom Server als expiration Date interpretiert. Per Default ist dies einmal jede Mitute (Github)
-- Falls der Garbage Collector einen affiliate findet, der expired ist, wird dieser gelöscht. Das scheint im Endeffekt dann der gleiche Codepfad zu sein wie der DeleteAffiliate API-Call (Github)
+- es werden offensichtlich Affiliates geloescht, aber der Github Code wirkt, als waere der API Call AffilliateDelete implementiert, aber wird nirgends aufgerufen [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-service%20AffiliateDelete&type=code) → AffiliateDelete wird einzig vom discovery-client (Node) aufgerufen [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-client%20AffiliateDelete&type=code)
+- aehnlich sieht es beim API Call List aus [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-service+List&type=code) → der discovery-client (Node) implementiert nicht den API Call List, tatsaechlich unimplemented? [Github](https://github.com/search?q=repo%3Asiderolabs%2Fdiscovery-client%20List&type=code)
+- Garbage Collection: Im AffiliateUpdate Request ist ein TTL Wert. Dieser wird vom Server als expiration Date interpretiert. Per Default ist dies einmal jede Mitute [Github](https://github.com/siderolabs/discovery-service/blob/main/cmd/discovery-service/main.go#L32)
+- Falls der Garbage Collector einen affiliate findet, der expired ist, wird dieser gelöscht. Das scheint im Endeffekt dann der gleiche Codepfad zu sein wie der DeleteAffiliate API-Call [Github](https://github.com/siderolabs/discovery-service/blob/main/internal/state/cluster.go#L144)
 
 ## Links
 öffentliche Instanz: https://discovery.talos.dev/
