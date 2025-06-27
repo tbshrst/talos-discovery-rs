@@ -48,14 +48,14 @@ enum Commands {
     Upload {
         /// Path to the file
         #[arg(long)]
-        filepath: String,
+        _filepath: String,
     },
 
     /// Download a file
     Download {
         /// Path to the file
         #[arg(long)]
-        filepath: String,
+        _filepath: String,
     },
 }
 

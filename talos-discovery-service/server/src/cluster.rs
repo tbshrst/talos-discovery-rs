@@ -172,7 +172,7 @@ impl TalosCluster {
     }
 
     pub async fn delete_affiliate(&mut self, affiliate_id: &AffiliateId) -> Option<Affiliate> {
-        debug!("Removing affiliate ID {}", affiliate_id);
+        debug!("Removing affiliate ID {} from Cluster ID {}", affiliate_id, self.id);
         self.affiliates.remove(affiliate_id)
     }
 
@@ -221,10 +221,10 @@ impl fmt::Display for TalosCluster {
 
                 format!(
                     "{}..",
-                    data.iter().map(|b| format!("{:02x}", b)).collect::<Vec<_>>().join("")
+                    data.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join("")
                 )
             };
-            let _ = write!(f, ", Encrypted data: {}", encrypted_data);
+            let _ = write!(f, ", Encrypted data: {encrypted_data}");
 
             for endpoint in &affiliate.endpoints {
                 let encrypted_endpoint = {
@@ -238,12 +238,12 @@ impl fmt::Display for TalosCluster {
                         "{}..",
                         endpoints
                             .iter()
-                            .map(|b| format!("{:02x}", b))
+                            .map(|b| format!("{b:02x}"))
                             .collect::<Vec<_>>()
                             .join("")
                     )
                 };
-                let _ = write!(f, ", Encrypted Endpoint: {}", encrypted_endpoint);
+                let _ = write!(f, ", Encrypted Endpoint: {encrypted_endpoint}");
             }
         }
 

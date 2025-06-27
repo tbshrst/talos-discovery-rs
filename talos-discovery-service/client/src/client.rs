@@ -8,15 +8,15 @@ use crate::{Cli, Commands};
 
 pub(crate) struct Client {
     command: ClientCommand,
-    client: ClusterClient<Channel>,
-    cluster: Cluster,
+    _client: ClusterClient<Channel>,
+    _cluster: Cluster,
 }
 
 struct Cluster {
-    cluster_id: String,
-    affiliate_id: String,
-    address: String,
-    port: u16,
+    _cluster_id: String,
+    _affiliate_id: String,
+    _address: String,
+    _port: u16,
 }
 enum ClientCommand {
     Chat(Chat),
@@ -32,8 +32,8 @@ impl Client {
                 username,
                 password,
             } => ClientCommand::Chat(Chat::new(chatroom, username, password)),
-            Commands::Upload { filepath } => ClientCommand::Upload,
-            Commands::Download { filepath } => ClientCommand::Download,
+            Commands::Upload { _filepath } => ClientCommand::Upload,
+            Commands::Download { _filepath } => ClientCommand::Download,
         };
 
         let cluster_id = {
@@ -48,12 +48,12 @@ impl Client {
 
         Ok(Self {
             command,
-            client,
-            cluster: Cluster {
-                cluster_id,
-                affiliate_id,
-                address: cli_args.address,
-                port: cli_args.port,
+            _client: client,
+            _cluster: Cluster {
+                _cluster_id: cluster_id,
+                _affiliate_id: affiliate_id,
+                _address: cli_args.address,
+                _port: cli_args.port,
             },
         })
     }

@@ -44,6 +44,7 @@ impl DiscoveryService {
         if clusters.contains_key(&cluster_id) {
             return self.get_cluster(clusters, cluster_id).await.unwrap();
         }
+
         info!("Creating new cluster with ID {}", cluster_id.clone());
         clusters.insert(cluster_id.clone(), TalosCluster::new(cluster_id.clone()));
         self.get_cluster(clusters, cluster_id).await.unwrap()
@@ -91,6 +92,7 @@ impl DiscoveryService {
     ) -> Result<Response<AffiliateUpdateResponse>, Status> {
         let mut clusters = self.clusters.lock().await;
         let cluster_id = request.cluster_id.clone();
+
         match clusters.get_mut(&cluster_id) {
             Some(existing_cluster) => existing_cluster.add_affiliate(&request).await?,
             None => {
@@ -100,6 +102,7 @@ impl DiscoveryService {
                 clusters.insert(cluster_id, cluster);
             }
         };
+
         Ok(Response::new(AffiliateUpdateResponse {}))
     }
 }
@@ -205,7 +208,7 @@ impl Cluster for DiscoveryService {
         let cluster = self
             .get_cluster(&mut clusters, cluster_id.clone())
             .await
-            .ok_or(Status::not_found(format!("Cluster ID {} not found", cluster_id)))
+            .ok_or(Status::not_found(format!("Cluster ID {cluster_id} not found")))
             .inspect_err(|err| error!("{}", err.to_string()))?;
 
         match cluster.get_affiliate(&affiliate_id).await {
@@ -231,7 +234,7 @@ impl Cluster for DiscoveryService {
         let cluster = self
             .get_cluster(&mut clusters, cluster_id.clone())
             .await
-            .ok_or(Status::not_found(format!("Cluster ID {} not found", cluster_id)))
+            .ok_or(Status::not_found(format!("Cluster ID {cluster_id} not found")))
             .inspect_err(|err| error!("{}", err.to_string()))?;
 
         let affiliates = cluster

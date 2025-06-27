@@ -58,4 +58,4 @@
     - name: Run Talos Linux discovery service
       become_user: "{{ user }}"
       shell: |
-        podman run -d --restart always -p 3000:3000 ghcr.io/siderolabs/discovery-service:v1.0.9
+        podman run -d --restart always -p 3000:3000 -p 3001:3001 ghcr.io/siderolabs/discovery-service:v1.0.10
