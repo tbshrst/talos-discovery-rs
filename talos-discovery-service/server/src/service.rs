@@ -1,5 +1,10 @@
-use std::{collections::HashMap, net::IpAddr, sync::Arc, time::Duration};
-use tokio::{sync::Mutex, time};
+use std::{collections::HashMap, net::IpAddr, path::PathBuf, sync::Arc, time::Duration};
+use tokio::io::AsyncWriteExt;
+use tokio::{
+    fs::{File, OpenOptions},
+    sync::Mutex,
+    time,
+};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 use tracing::{debug, error, info};
@@ -14,18 +19,29 @@ use discovery_api::{
 pub(crate) struct DiscoveryService {
     clusters: Arc<Mutex<HashMap<ClusterId, TalosCluster>>>,
     gc_interval: Duration,
+    backup_path: Option<PathBuf>,
+    backup_interval: Duration,
 }
 
 impl DiscoveryService {
-    pub async fn new(gc_interval: u16) -> Self {
+    const BACKUP_FILE_NAME: &str = "discovery_service_backup.json";
+
+    pub async fn new(gc_interval: u16, backup_path: Option<String>, backup_interval: u16) -> anyhow::Result<Self> {
+        let backup_path = backup_path.map(|path| PathBuf::from(path).join(Self::BACKUP_FILE_NAME));
+
         let new = Self {
             clusters: Arc::new(Mutex::new(HashMap::new())),
             gc_interval: Duration::from_secs(gc_interval.into()),
+            backup_path,
+            backup_interval: Duration::from_secs(backup_interval.into()),
         };
 
+        new.import_backup().await?;
+
+        new.run_backup_loop().await;
         new.run_gc_loop().await;
 
-        new
+        Ok(new)
     }
 
     async fn get_cluster<'a>(
@@ -52,7 +68,6 @@ impl DiscoveryService {
 
     async fn run_gc_loop(&self) {
         let self_clone = self.clone();
-
         tokio::task::spawn(async move {
             let mut gc_interval = time::interval(self_clone.gc_interval);
 
@@ -84,6 +99,79 @@ impl DiscoveryService {
         clusters
             .iter()
             .for_each(|(_, cluster)| debug!("{}", cluster.to_string()));
+    }
+
+    async fn run_backup_loop(&self) {
+        if self.backup_path.is_none() {
+            debug!("Backups deactivated");
+            return;
+        }
+
+        let self_clone = self.clone();
+        tokio::task::spawn(async move {
+            let mut backup_interval = time::interval(self_clone.backup_interval);
+
+            info!("Backup loop started");
+            loop {
+                backup_interval.tick().await;
+                if let Err(err) = self_clone.export_backup().await {
+                    error!("couldn't save backup: {}", err.to_string());
+                    error!("stopping backup loop");
+                    return;
+                }
+            }
+        });
+    }
+
+    async fn export_backup(&self) -> anyhow::Result<()> {
+        debug!("export_backup");
+
+        let backup_path = {
+            match &self.backup_path {
+                Some(backup_path) => backup_path.as_path(),
+                None => return Ok(()),
+            }
+        };
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(backup_path)
+            .await?;
+
+        let svc_clusters = self.clusters.lock().await;
+        let svc_clusters = svc_clusters.values().collect::<Vec<_>>();
+
+        let json = serde_json::to_string(&svc_clusters)?;
+        file.write_all(json.as_bytes()).await?;
+        file.write_u8(b'\n').await?;
+
+        debug!("{} clusters backed up", svc_clusters.len());
+
+        Ok(())
+    }
+
+    async fn import_backup(&self) -> anyhow::Result<()> {
+        debug!("import_backup");
+
+        let backup_path = {
+            match &self.backup_path {
+                Some(backup_path) if backup_path.exists() => backup_path.as_path(),
+                _ => return Ok(()),
+            }
+        };
+        let file = File::open(backup_path).await?.into_std().await;
+        let reader = std::io::BufReader::new(file);
+
+        let clusters: Vec<TalosCluster> = serde_json::from_reader(reader)?;
+        info!("{} clusters restored", clusters.len());
+
+        let mut svc_clusters = self.clusters.lock().await;
+        for cluster in clusters {
+            svc_clusters.insert(cluster.id.clone(), cluster);
+        }
+
+        Ok(())
     }
 
     async fn update_clusters(

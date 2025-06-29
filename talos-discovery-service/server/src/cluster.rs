@@ -1,4 +1,5 @@
 use chrono::{DateTime, Timelike, Utc};
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt,
@@ -18,12 +19,12 @@ pub(crate) type ClusterId = String;
 type AffiliateId = String;
 
 pub(crate) struct TalosCluster {
-    id: ClusterId,
+    pub(crate) id: ClusterId,
     affiliates: HashMap<AffiliateId, Affiliate>,
     watch_broadcaster: Sender<WatchResponse>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub(crate) struct Affiliate {
     // part of gRPC message Affiliate
     id: AffiliateId,
@@ -196,6 +197,39 @@ impl TalosCluster {
         );
 
         self.broadcast_deleted_affiliates(expired).await;
+    }
+}
+
+impl Serialize for TalosCluster {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("TalosCluster", 2)?;
+        state.serialize_field("id", &self.id)?;
+        state.serialize_field("affiliates", &self.affiliates)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for TalosCluster {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct SerdeTalosCluster {
+            id: ClusterId,
+            affiliates: HashMap<AffiliateId, Affiliate>,
+        }
+
+        let helper = SerdeTalosCluster::deserialize(deserializer)?;
+
+        Ok(Self {
+            id: helper.id,
+            affiliates: helper.affiliates,
+            watch_broadcaster: Sender::new(Self::BUFFER_SIZE),
+        })
     }
 }
 

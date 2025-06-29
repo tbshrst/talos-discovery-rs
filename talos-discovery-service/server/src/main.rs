@@ -17,10 +17,18 @@ pub struct Config {
     // Garbage collection interval
     #[clap(long, env = "GC_INTERVAL", default_value = "60")]
     pub gc_interval: u16,
+
+    // Backup path
+    #[clap(long, env = "BACKUP_PATH")]
+    pub backup_path: Option<String>,
+
+    // Backup interval
+    #[clap(long, env = "BACKUP_INTERVAL", default_value = "600")]
+    pub backup_interval: u16,
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     let config = Config::parse();
 
     tracing_subscriber::registry()
@@ -28,7 +36,9 @@ async fn main() {
         .with(fmt::layer().with_target(false))
         .init();
 
-    let discovery_service = ClusterServer::new(DiscoveryService::new(config.gc_interval).await);
+    let discovery_service = ClusterServer::new(
+        DiscoveryService::new(config.gc_interval, config.backup_path, config.backup_interval).await?,
+    );
     let addr = format!("0.0.0.0:{}", config.port).parse().unwrap();
 
     tracing::info!("Starting Talos Discovery Service gRPC server: {}", addr);
@@ -37,4 +47,6 @@ async fn main() {
         .serve(addr)
         .await
         .unwrap();
+
+    Ok(())
 }
