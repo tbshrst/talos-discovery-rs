@@ -2,7 +2,7 @@ mod cluster;
 mod service;
 
 use clap::Parser;
-use discovery_api::cluster_server::ClusterServer;
+use discovery_api::{cluster_server::ClusterServer, tonic::transport::Server};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 use crate::service::DiscoveryService;
@@ -42,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
     let addr = format!("0.0.0.0:{}", config.port).parse().unwrap();
 
     tracing::info!("Starting Talos Discovery Service gRPC server: {}", addr);
-    tonic::transport::Server::builder()
+    Server::builder()
         .add_service(discovery_service)
         .serve(addr)
         .await

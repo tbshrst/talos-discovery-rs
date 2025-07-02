@@ -10,10 +10,9 @@ use tokio::sync::{
     broadcast::Sender,
     mpsc::{self, Receiver},
 };
-use tonic::Status;
 use tracing::{debug, error, info};
 
-use discovery_api::{self, AffiliateUpdateRequest, WatchResponse};
+use discovery_api::{self, tonic::Status, AffiliateUpdateRequest, WatchResponse};
 
 pub(crate) type ClusterId = String;
 type AffiliateId = String;

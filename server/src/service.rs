@@ -1,3 +1,10 @@
+use discovery_api::{
+    self,
+    cluster_server::Cluster,
+    tonic::{async_trait, Request, Response, Status},
+    AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest, AffiliateUpdateResponse, HelloRequest,
+    HelloResponse, ListRequest, ListResponse, WatchRequest, WatchResponse,
+};
 use std::{collections::HashMap, net::IpAddr, path::PathBuf, sync::Arc, time::Duration};
 use tokio::io::AsyncWriteExt;
 use tokio::{
@@ -6,14 +13,9 @@ use tokio::{
     time,
 };
 use tokio_stream::wrappers::ReceiverStream;
-use tonic::{Request, Response, Status};
 use tracing::{debug, error, info};
 
 use crate::cluster::{Affiliate, ClusterId, TalosCluster};
-use discovery_api::{
-    self, cluster_server::Cluster, AffiliateDeleteRequest, AffiliateDeleteResponse, AffiliateUpdateRequest,
-    AffiliateUpdateResponse, HelloRequest, HelloResponse, ListRequest, ListResponse, WatchRequest, WatchResponse,
-};
 
 #[derive(Clone)]
 pub(crate) struct DiscoveryService {
@@ -195,7 +197,7 @@ impl DiscoveryService {
     }
 }
 
-#[tonic::async_trait]
+#[async_trait]
 impl Cluster for DiscoveryService {
     type WatchStream = ReceiverStream<Result<WatchResponse, Status>>;
 

@@ -214,7 +214,6 @@ dependencies = [
  "sha256",
  "tokio",
  "tokio-stream",
- "tonic",
  "tracing",
  "tracing-subscriber",
 ]
@@ -971,7 +970,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-stream",
- "tonic",
  "tracing",
  "tracing-subscriber",
 ]

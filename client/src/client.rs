@@ -1,7 +1,6 @@
-use tonic::transport::Channel;
 use tracing::info;
 
-use discovery_api::{cluster_client::ClusterClient, HelloRequest};
+use discovery_api::{cluster_client::ClusterClient, tonic::transport::Channel, HelloRequest};
 
 use crate::chat::Chat;
 use crate::{Cli, Commands};
