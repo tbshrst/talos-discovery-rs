@@ -1,3 +1,6 @@
 [submodule "terraform"]
 	path = terraform
 	url = https://github.com/tbshrst/terraform-openstack-talos.git
+[submodule "api/discovery-api"]
+	path = api/discovery-api
+	url = https://github.com/siderolabs/discovery-api.git
